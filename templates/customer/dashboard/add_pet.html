@@ -1,0 +1,72 @@
+{% include 'layouts/customer_header.html' %}
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Thêm thú cưng</h2>
+
+        <div class="customer-form" style="max-width: 600px;">
+            <form method="POST" action="/customer/dashboard/pets/add">
+                <div class="form-group">
+                    <label for="pet_name">Tên thú cưng <span style="color: red;">*</span></label>
+                    <input type="text" id="pet_name" name="pet_name" required 
+                           placeholder="Nhập tên thú cưng">
+                </div>
+
+                <div class="form-group">
+                    <label for="pet_species">Loài/Giống</label>
+                    <input type="text" id="pet_species" name="pet_species" 
+                           placeholder="Ví dụ: Chó Golden, Mèo Ba Tư">
+                </div>
+
+                <div class="form-group">
+                    <label for="pet_gender">Giới tính</label>
+                    <select id="pet_gender" name="pet_gender">
+                        <option value="">-- Chọn giới tính --</option>
+                        <option value="0">Đực</option>
+                        <option value="1">Cái</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="pet_dob">Ngày sinh</label>
+                    <input type="date" id="pet_dob" name="pet_dob">
+                </div>
+
+                <div class="form-group">
+                    <label for="pet_weight">Cân nặng (kg)</label>
+                    <input type="number" id="pet_weight" name="pet_weight" step="0.1" 
+                           placeholder="Nhập cân nặng">
+                </div>
+
+                <div class="form-group">
+                    <label for="pet_sterilization">Tình trạng triệt sản</label>
+                    <select id="pet_sterilization" name="pet_sterilization">
+                        <option value="">-- Chọn --</option>
+                        <option value="0">Chưa triệt sản</option>
+                        <option value="1">Đã triệt sản</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="pet_characteristic">Đặc điểm</label>
+                    <textarea id="pet_characteristic" name="pet_characteristic" rows="3" 
+                              placeholder="Mô tả đặc điểm của thú cưng"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="pet_drug_allergy">Dị ứng thuốc</label>
+                    <textarea id="pet_drug_allergy" name="pet_drug_allergy" rows="3" 
+                              placeholder="Ghi chú về dị ứng thuốc (nếu có)"></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">Thêm thú cưng</button>
+                <a href="/customer/dashboard/pets" 
+                   style="display: block; text-align: center; margin-top: 1rem; color: #666; text-decoration: none;">
+                    Hủy
+                </a>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% include 'layouts/customer_footer.html' %}

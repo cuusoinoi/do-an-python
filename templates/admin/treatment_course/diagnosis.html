@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    {% include 'layouts/admin_sidebar.html' %}
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        <main class="content">
+            <div class="form-container">
+                <div class="back-box">
+                    <a href="{{ site_url('admin/treatment-courses/' ~ course.treatment_course_id ~ '/sessions') }}" class="btn btn-back"><i class="fas fa-arrow-left"></i> Quay lại</a>
+                </div>
+                <h2>Chẩn đoán - Buổi điều trị {{ date('d/m/Y H:i', strtotime(session.treatment_session_datetime)) }}</h2>
+                <p><strong>Khách hàng:</strong> {{ customer.customer_name }} | <strong>Thú cưng:</strong> {{ pet.pet_name }} | <strong>Bác sĩ:</strong> {{ doctor.doctor_name }}</p>
+                
+                {% if flash.success %}
+                    <div class="alert alert-success">{{ flash.success }}</div>
+                {% endif %}
+                {% if flash.error %}
+                    <div class="alert alert-error">{{ flash.error }}</div>
+                {% endif %}
+                
+                <form action="{{ site_url('admin/treatment-courses/' ~ course.treatment_course_id ~ '/sessions/' ~ session.treatment_session_id ~ '/diagnosis/save') }}" method="post">
+                    
+                    <div class="form-group">
+                        <label for="diagnosis_name">Tên chẩn đoán</label>
+                        <input type="text" id="diagnosis_name" name="diagnosis_name" value="{{ diagnosis.diagnosis_name or '' }}" placeholder="Nhập tên chẩn đoán">
+                    </div>
+                    <div class="form-group">
+                        <label for="diagnosis_type">Loại chẩn đoán</label>
+                        <select id="diagnosis_type" name="diagnosis_type">
+                            <option value="">-- Chọn loại --</option>
+                            <option value="Sơ bộ" {{ ('selected' if (diagnosis.diagnosis_type or '') == 'Sơ bộ' else '') }}>Sơ bộ</option>
+                            <option value="Xác định" {{ ('selected' if (diagnosis.diagnosis_type or '') == 'Xác định' else '') }}>Xác định</option>
+                            <option value="Phân biệt" {{ ('selected' if (diagnosis.diagnosis_type or '') == 'Phân biệt' else '') }}>Phân biệt</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="clinical_tests">Xét nghiệm lâm sàng</label>
+                        <textarea id="clinical_tests" name="clinical_tests" rows="4" placeholder="Mô tả các xét nghiệm lâm sàng...">{{ diagnosis.clinical_tests or '' }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Ghi chú</label>
+                        <textarea id="notes" name="notes" rows="4" placeholder="Nhập ghi chú...">{{ diagnosis.notes or '' }}</textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Lưu chẩn đoán</button>
+                        <a href="{{ site_url('admin/treatment-courses/' ~ course.treatment_course_id ~ '/sessions/' ~ session.treatment_session_id ~ '/prescription') }}" class="btn btn-prescription"><i class="fas fa-prescription"></i> Xem đơn thuốc</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+    <script src="/static/assets/js/script.js" defer></script>
+</body>
+</html>

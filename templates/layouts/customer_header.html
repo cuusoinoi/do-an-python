@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or 'UIT Petcare' }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/customer.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    <nav class="customer-nav">
+        <div class="container">
+            <div class="nav-content">
+                <a href="/customer" class="nav-logo">
+                    <img src="/static/admin_assets/images/logo.png" alt="UIT Petcare" class="logo-img">
+                    <span class="logo-text">UIT Petcare</span>
+                </a>
+                <ul class="nav-menu">
+                    <li><a href="/customer" class="{{ 'active' if isHome else '' }}">Trang chủ</a></li>
+                    <li><a href="/customer/services" class="{{ 'active' if request.url.path.startswith('/customer/services') else '' }}">Dịch vụ</a></li>
+                    <li><a href="/customer/contact" class="{{ 'active' if request.url.path.startswith('/customer/contact') else '' }}">Liên hệ</a></li>
+                    {% if request.session.get('role') == 'customer' %}
+                        <li><a href="/customer/booking" class="{{ 'active' if request.url.path.startswith('/customer/booking') else '' }}">Đặt lịch</a></li>
+                        <li class="nav-user-dropdown">
+                            <a href="#" class="nav-user-toggle">
+                                <i class="fas fa-user-circle"></i> 
+                                <span>{{ request.session.get('fullname') or 'Tài khoản' }}</span>
+                                <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 0.5rem;"></i>
+                            </a>
+                            <ul class="nav-user-menu">
+                                <li><a href="/customer/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                                <li><a href="/customer/dashboard/profile"><i class="fas fa-user"></i> Thông tin cá nhân</a></li>
+                                <li><a href="/customer/dashboard/pets"><i class="fas fa-paw"></i> Thú cưng</a></li>
+                                <li><hr style="margin: 0.5rem 0; border: none; border-top: 1px solid #e0e0e0;"></li>
+                                <li><a href="/customer/logout" style="color: #e74c3c;"><i class="fas fa-sign-out-alt"></i> Đăng xuất</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li><a href="/customer/login" class="btn-login">Đăng nhập</a></li>
+                        <li><a href="/customer/register" class="btn-register">Đăng ký</a></li>
+                    {% endif %}
+                </ul>
+                <button class="nav-toggle" id="navToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </nav>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Times New Roman', Times, serif; font-size: 14px; line-height: 1.6; padding: 20px; }
+        .print-container { max-width: 800px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .header h1 { font-size: 20px; text-transform: uppercase; margin-bottom: 5px; }
+        .header p { font-size: 12px; }
+        .title { text-align: center; margin: 20px 0; }
+        .title h2 { font-size: 24px; text-transform: uppercase; }
+        .info-section { margin-bottom: 20px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .info-row { display: flex; margin-bottom: 8px; }
+        .info-label { font-weight: bold; min-width: 150px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; background: #f9f9f9; }
+        .section-title { font-weight: bold; font-size: 16px; margin-bottom: 10px; }
+        .total-box { background: #e8f4fd; padding: 15px; margin: 20px 0; text-align: center; }
+        .total-box .amount { font-size: 28px; font-weight: bold; color: #2980b9; }
+        .signature { display: flex; justify-content: space-between; margin-top: 50px; }
+        .signature-box { text-align: center; width: 45%; }
+        .signature-box p { margin-bottom: 60px; }
+        .no-print { margin-bottom: 20px; text-align: center; }
+        .btn-print { padding: 10px 30px; background: #3498db; color: #fff; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; }
+        .btn-print:hover { background: #2980b9; }
+        @media print {
+            .no-print { display: none; }
+            body { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <button class="btn-print" onclick="window.print()">🖨️ In phiếu lưu chuồng</button>
+        <button class="btn-print" onclick="window.close()" style="background: #95a5a6;">✕ Đóng</button>
+    </div>
+    
+    <div class="print-container">
+        <div class="header">
+            <h1>{{ settings.clinic_name or 'UIT PETCARE' }}</h1>
+            <p>{{ settings.clinic_address_1 or '' }}</p>
+            <p>ĐT: {{ settings.phone_number_1 or '' }}</p>
+        </div>
+
+        <div class="title">
+            <h2>PHIẾU LƯU CHUỒNG</h2>
+            <p>Số: {{ str_pad(enclosure.pet_enclosure_id, 6, '0', STR_PAD_LEFT) }}</p>
+        </div>
+
+        <div class="info-section">
+            <div class="info-grid">
+                <div>
+                    <div class="info-row">
+                        <span class="info-label">Chủ thú cưng:</span>
+                        <span>{{ customer.customer_name or '' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Điện thoại:</span>
+                        <span>{{ customer.customer_phone_number or '' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Địa chỉ:</span>
+                        <span>{{ customer.customer_address or '' }}</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="info-row">
+                        <span class="info-label">Tên thú cưng:</span>
+                        <span>{{ pet.pet_name or '' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Loài / Giống:</span>
+                        <span>{{ pet.pet_species or '' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Thông tin lưu chuồng</div>
+            <div class="info-grid">
+                <div class="info-row">
+                    <span class="info-label">Số chuồng:</span>
+                    <span>{{ enclosure.pet_enclosure_number or '' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ngày nhận:</span>
+                    <span>{{ date('d/m/Y H:i', strtotime(enclosure.check_in_date)) }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Ngày trả (dự kiến):</span>
+                    <span>{{ enclosure.check_out_date or '-' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Giá ngày:</span>
+                    <span>{{ number_format(enclosure.daily_rate or 0) }} VNĐ</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Đặt cọc:</span>
+                    <span>{{ number_format(enclosure.deposit or 0) }} VNĐ</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Trạng thái:</span>
+                    <span>{{ enclosure.pet_enclosure_status or '' }}</span>
+                </div>
+            </div>
+        </div>
+
+        {% if enclosure.pet_enclosure_note %}
+        <div class="section">
+            <div class="section-title">Ghi chú</div>
+            <p>{{ enclosure.pet_enclosure_note }}</p>
+        </div>
+        {% endif %}
+
+        <div class="total-box">
+            <p>TỔNG TIỀN THANH TOÁN</p>
+            <p class="amount">{{ number_format(enclosure.daily_rate or 0) }} VNĐ/ngày</p>
+        </div>
+
+        <div class="signature">
+            <div class="signature-box">
+                <p>Khách hàng</p>
+                <p><em>(Ký, ghi rõ họ tên)</em></p>
+            </div>
+            <div class="signature-box">
+                <p>{{ settings.signing_place or '' }}, ngày {{ date('d') }} tháng {{ date('m') }} năm {{ now().year }}</p>
+                <p>Nhân viên</p>
+                <p><em>(Ký, ghi rõ họ tên)</em></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

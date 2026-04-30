@@ -1,0 +1,26 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/treatment-courses/{{ course_id }}/sessions/store{% else %}/admin/treatment-courses/{{ course_id }}/sessions/update/{{ row.treatment_session_id }}{% endif %}">
+    <label>Bac si</label>
+    <select name="doctor_id" required>
+        {% for d in doctors %}
+        <option value="{{ d.doctor_id }}" {% if row and row.doctor_id == d.doctor_id %}selected{% endif %}>{{ d.doctor_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Thoi gian</label>
+    <input type="datetime-local" name="datetime" value="{{ row.treatment_session_datetime if row else '' }}" required>
+    <label>Nhiet do</label>
+    <input type="number" step="0.1" name="temperature" value="{{ row.temperature if row else '' }}">
+    <label>Can nang</label>
+    <input type="number" step="0.1" name="weight" value="{{ row.weight if row else '' }}">
+    <label>Mach</label>
+    <input type="number" name="pulse_rate" value="{{ row.pulse_rate if row else '' }}">
+    <label>Nhip tho</label>
+    <input type="number" name="respiratory_rate" value="{{ row.respiratory_rate if row else '' }}">
+    <label>Ghi chu</label>
+    <textarea name="overall_notes">{{ row.overall_notes if row else '' }}</textarea>
+    <button type="submit">Luu</button>
+    <a href="/admin/treatment-courses/{{ course_id }}/sessions">Quay lai</a>
+</form>
+{% endblock %}

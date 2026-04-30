@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or "UIT Petcare" }}</title>
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    {% if request.url.path.startswith("/admin") %}
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    {% else %}
+    <link rel="stylesheet" href="/static/assets/css/customer.css">
+    {% endif %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+{% if not request.url.path.startswith("/admin") %}
+<nav class="customer-nav">
+    <div class="container">
+        <div class="nav-content">
+            <a href="/customer" class="nav-logo">
+                <img src="/static/admin_assets/images/logo.png" alt="UIT Petcare" class="logo-img">
+                <span class="logo-text">UIT Petcare</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="/customer" class="{{ 'active' if request.url.path == '/customer' else '' }}">Trang chủ</a></li>
+                <li><a href="/customer/services" class="{{ 'active' if request.url.path.startswith('/customer/services') else '' }}">Dịch vụ</a></li>
+                <li><a href="/customer/contact" class="{{ 'active' if request.url.path.startswith('/customer/contact') else '' }}">Liên hệ</a></li>
+                {% if request.session.get("role") == "customer" %}
+                <li><a href="/customer/booking" class="{{ 'active' if request.url.path.startswith('/customer/booking') else '' }}">Đặt lịch</a></li>
+                <li><a href="/customer/dashboard" class="{{ 'active' if request.url.path.startswith('/customer/dashboard') else '' }}">Dashboard</a></li>
+                <li><a href="/customer/logout">Đăng xuất</a></li>
+                {% else %}
+                <li><a href="/customer/login" class="btn-login">Đăng nhập</a></li>
+                <li><a href="/customer/register" class="btn-register">Đăng ký</a></li>
+                <li><a href="/admin" class="btn-login">Admin</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endif %}
+<main class="container">
+    {% if flash.success %}
+    <div class="alert success">{{ flash.success }}</div>
+    {% endif %}
+    {% if flash.error %}
+    <div class="alert error">{{ flash.error }}</div>
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+{% if not request.url.path.startswith("/admin") %}
+<footer class="customer-footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>UIT Petcare</h3>
+                <p>Phòng khám thú y & Spa thú cưng chuyên nghiệp</p>
+            </div>
+            <div class="footer-section">
+                <h4>Liên hệ</h4>
+                <p><i class="fas fa-map-marker-alt"></i> {{ settings.clinic_address_1 if settings else "" }}</p>
+                <p><i class="fas fa-phone"></i> {{ settings.phone_number_1 if settings else "" }}</p>
+            </div>
+        </div>
+    </div>
+</footer>
+<script src="/static/assets/js/customer.js"></script>
+{% else %}
+<script src="/static/assets/js/script.js"></script>
+{% endif %}
+</body>
+</html>

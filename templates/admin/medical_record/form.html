@@ -1,0 +1,45 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/medical-records/store{% else %}/admin/medical-records/update/{{ row.medical_record_id }}{% endif %}">
+    <label>Khach hang</label>
+    <select name="customer_id" required>
+        {% for c in customers %}
+        <option value="{{ c.customer_id }}" {% if row and row.customer_id == c.customer_id %}selected{% endif %}>{{ c.customer_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Thu cung</label>
+    <select name="pet_id" required>
+        {% for p in pets %}
+        <option value="{{ p.pet_id }}" {% if row and row.pet_id == p.pet_id %}selected{% endif %}>{{ p.pet_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Bac si</label>
+    <select name="doctor_id" required>
+        {% for d in doctors %}
+        <option value="{{ d.doctor_id }}" {% if row and row.doctor_id == d.doctor_id %}selected{% endif %}>{{ d.doctor_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Loai</label>
+    <select name="type" required>
+        {% for t in ['Khám', 'Điều trị', 'Vaccine'] %}
+        <option value="{{ t }}" {% if row and row.medical_record_type == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+    </select>
+    <label>Ngay kham</label>
+    <input type="date" name="visit_date" value="{{ row.medical_record_visit_date if row else '' }}" required>
+    <label>Tom tat</label>
+    <textarea name="summary">{{ row.medical_record_summary if row else '' }}</textarea>
+    <label>Chi tiet</label>
+    <textarea name="details">{{ row.medical_record_details if row else '' }}</textarea>
+    <h3>Thong tin vaccine</h3>
+    <label>Ten vaccine</label>
+    <input type="text" name="vaccine_name" value="{{ vaccination.vaccine_name if vaccination else '' }}">
+    <label>So lo</label>
+    <input type="text" name="batch_number" value="{{ vaccination.batch_number if vaccination else '' }}">
+    <label>Ngay tiem tiep theo</label>
+    <input type="date" name="next_injection_date" value="{{ vaccination.next_injection_date if vaccination else '' }}">
+    <button type="submit">Luu</button>
+    <a href="/admin/medical-records">Quay lai</a>
+</form>
+{% endblock %}

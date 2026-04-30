@@ -1,0 +1,40 @@
+{% include 'layouts/customer_header.html' %}
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Liên hệ</h2>
+        
+        <div style="max-width: 800px; margin: 0 auto;">
+            <div class="service-card" style="text-align: left;">
+                <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;">
+                    <i class="fas fa-map-marker-alt"></i> Địa chỉ
+                </h3>
+                <p style="font-size: 1.6rem; line-height: 1.8;">
+                    {{ settings.clinic_address_1 or '' }}<br>
+                    {{ settings.clinic_address_2 or '' }}
+                </p>
+            </div>
+
+            <div class="service-card" style="text-align: left; margin-top: 2rem;">
+                <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;">
+                    <i class="fas fa-phone"></i> Điện thoại
+                </h3>
+                <p style="font-size: 1.6rem; line-height: 1.8;">
+                    {{ settings.phone_number_1 or '' }}<br>
+                    {{ settings.phone_number_2 or '' }}
+                </p>
+            </div>
+
+            <div class="service-card" style="text-align: left; margin-top: 2rem;">
+                <h3 style="color: var(--primary-color); margin-bottom: 1.5rem;">
+                    <i class="fas fa-clock"></i> Giờ làm việc
+                </h3>
+                <p style="font-size: 1.6rem; line-height: 1.8;">
+                    Thứ 2 - Chủ nhật: 8:00 - 20:00
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% include 'layouts/customer_footer.html' %}

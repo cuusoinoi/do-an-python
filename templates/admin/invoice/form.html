@@ -1,0 +1,45 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/invoices/store{% else %}/admin/invoices/update/{{ row.invoice_id }}{% endif %}">
+    <label>Khach hang</label>
+    <select name="customer_id" required>
+        {% for c in customers %}
+        <option value="{{ c.customer_id }}" {% if row and row.customer_id == c.customer_id %}selected{% endif %}>{{ c.customer_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Thu cung</label>
+    <select name="pet_id" required>
+        {% for p in pets %}
+        <option value="{{ p.pet_id }}" {% if row and row.pet_id == p.pet_id %}selected{% endif %}>{{ p.pet_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Ngay hoa don</label>
+    <input type="datetime-local" name="invoice_date" value="{{ row.invoice_date if row else '' }}" required>
+    <label>Giam gia</label>
+    <input type="number" name="discount" value="{{ row.discount if row else 0 }}">
+    <label>Tam tinh</label>
+    <input type="number" name="subtotal" value="{{ row.subtotal if row else 0 }}">
+    <label>Dat coc</label>
+    <input type="number" name="deposit" value="{{ row.deposit if row else 0 }}">
+    <label>Tong tien</label>
+    <input type="number" name="total_amount" value="{{ row.total_amount if row else 0 }}">
+    <h3>Chi tiet dich vu</h3>
+    {% set source_details = details if details else [{}] %}
+    {% for d in source_details %}
+    <div style="border:1px solid #ddd;padding:8px;margin:8px 0;">
+        <select name="service_ids">
+            <option value="">--Chon dich vu--</option>
+            {% for s in services %}
+            <option value="{{ s.service_type_id }}" {% if d and d.service_type_id == s.service_type_id %}selected{% endif %}>{{ s.service_name }}</option>
+            {% endfor %}
+        </select>
+        <input type="number" name="quantities" placeholder="SL" value="{{ d.quantity if d else 1 }}">
+        <input type="number" name="unit_prices" placeholder="Don gia" value="{{ d.unit_price if d else 0 }}">
+        <input type="number" name="total_prices" placeholder="Thanh tien" value="{{ d.total_price if d else 0 }}">
+    </div>
+    {% endfor %}
+    <button type="submit">Luu</button>
+    <a href="/admin/invoices">Quay lai</a>
+</form>
+{% endblock %}

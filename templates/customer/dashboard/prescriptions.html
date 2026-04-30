@@ -1,0 +1,61 @@
+{% include 'layouts/customer_header.html' %}
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Đơn thuốc</h2>
+
+        <div class="customer-form" style="max-width: 400px; margin-bottom: 3rem;">
+            <form method="GET" action="/customer/dashboard/prescriptions">
+                <div class="form-group">
+                    <label for="pet_id">Chọn thú cưng</label>
+                    <select id="pet_id" name="pet_id" onchange="this.form.submit()">
+                        <option value="">-- Tất cả thú cưng --</option>
+                        {% for pet in pets %}
+                            <option value="{{ pet.pet_id }}" 
+                                    {{ ('selected' if (selectedPetId == pet.pet_id) else '') }}>
+                                {{ pet.pet_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        {% if not prescriptions %}
+            <div class="service-card" style="text-align: center; padding: 4rem;">
+                <i class="fas fa-pills" style="font-size: 5rem; color: #ddd; margin-bottom: 2rem;"></i>
+                <p style="font-size: 1.6rem; color: #666;">Chưa có đơn thuốc nào</p>
+            </div>
+        {% else %}
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+                    <thead>
+                        <tr style="background: var(--primary-color); color: #fff;">
+                            <th style="padding: 1.5rem; text-align: left;">Thuốc</th>
+                            <th style="padding: 1.5rem; text-align: left;">Liều lượng</th>
+                            <th style="padding: 1.5rem; text-align: left;">Tần suất</th>
+                            <th style="padding: 1.5rem; text-align: left;">Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pres in prescriptions %}
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 1.5rem;">
+                                    <strong>{{ pres.medicine_name }}</strong><br>
+                                    <small style="color: #666;">{{ pres.medicine_route }}</small>
+                                </td>
+                                <td style="padding: 1.5rem;">
+                                    {{ pres.dosage }} {{ pres.unit }}
+                                </td>
+                                <td style="padding: 1.5rem;">{{ pres.frequency or 'N/A' }}</td>
+                                <td style="padding: 1.5rem;">{{ pres.notes or '-' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% include 'layouts/customer_footer.html' %}

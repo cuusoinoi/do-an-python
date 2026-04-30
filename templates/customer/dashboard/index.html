@@ -1,0 +1,323 @@
+{% include 'layouts/customer_header.html' %}
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Dashboard</h2>
+        <p style="text-align: center; margin-bottom: 3rem; font-size: 1.6rem; color: #666;">
+            Xin chào, {{ customer.customer_name or 'Khách hàng' }}!
+        </p>
+
+        <!-- Statistics -->
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <div class="dashboard-card-icon">
+                    <i class="fas fa-paw"></i>
+                </div>
+                <div class="dashboard-card-value">{{ totalPets }}</div>
+                <div class="dashboard-card-label">Thú cưng</div>
+            </div>
+
+            <div class="dashboard-card">
+                <div class="dashboard-card-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="dashboard-card-value">{{ totalAppointments }}</div>
+                <div class="dashboard-card-label">Lịch hẹn</div>
+            </div>
+
+            <a href="/customer/dashboard/invoices" style="text-decoration: none; color: inherit;">
+                <div class="dashboard-card" style="cursor: pointer; transition: transform 0.2s;">
+                    <div class="dashboard-card-icon">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="dashboard-card-value">{{ totalInvoices }}</div>
+                    <div class="dashboard-card-label">Hóa đơn</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="service-card" style="margin-top: 3rem;">
+            <h3 style="margin-bottom: 2rem; color: var(--primary-color);">Thao tác nhanh</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                <a href="/customer/booking" class="btn-submit" style="text-decoration: none; text-align: center; display: block;">
+                    <i class="fas fa-calendar-plus"></i> Đặt lịch
+                </a>
+                <a href="/customer/dashboard/pets" class="btn-submit" style="text-decoration: none; text-align: center; display: block; background: var(--secondary-color);">
+                    <i class="fas fa-paw"></i> Thú cưng
+                </a>
+                <a href="/customer/dashboard/medical-records" class="btn-submit" style="text-decoration: none; text-align: center; display: block; background: #007bff;">
+                    <i class="fas fa-file-medical"></i> Hồ sơ khám
+                </a>
+                <a href="/customer/dashboard/invoices" class="btn-submit" style="text-decoration: none; text-align: center; display: block; background: #6c757d;">
+                    <i class="fas fa-receipt"></i> Hóa đơn
+                </a>
+                <a href="/customer/booking/my-appointments" class="btn-submit" style="text-decoration: none; text-align: center; display: block; background: #28a745;">
+                    <i class="fas fa-list"></i> Lịch hẹn
+                </a>
+            </div>
+        </div>
+
+        <!-- Upcoming Appointments -->
+        {% if upcomingAppointments %}
+            <div class="service-card" id="appointments-section" style="margin-top: 3rem;">
+                <h3 style="margin-bottom: 2rem; color: var(--primary-color);">Lịch hẹn sắp tới</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #f4f6f9;">
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #ddd;">Ngày giờ</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #ddd;">Thú cưng</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #ddd;">Loại</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #ddd;">Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for apt in upcomingAppointments %}
+                                <tr>
+                                    <td style="padding: 1rem; border-bottom: 1px solid #ddd;">
+                                        {{ date('d/m/Y H:i', strtotime(apt.appointment_date)) }}
+                                    </td>
+                                    <td style="padding: 1rem; border-bottom: 1px solid #ddd;">
+                                        {{ apt.pet_name or 'N/A' }}
+                                    </td>
+                                    <td style="padding: 1rem; border-bottom: 1px solid #ddd;">
+                                        {{ apt.appointment_type }}
+                                    </td>
+                                    <td style="padding: 1rem; border-bottom: 1px solid #ddd;">
+                                        <span style="padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 1.2rem;
+                                            background: {{ ('#d4edda' if apt.status == 'confirmed' else '#fff3cd') }};
+                                            color: {{ ('#155724' if apt.status == 'confirmed' else '#856404') }};">
+                                            {{ ('Đã xác nhận' if apt.status == 'confirmed' else 'Chờ xác nhận') }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh dashboard data mỗi 5 giây
+    const refreshInterval = 5000; // 5 giây
+    
+    // Lưu giá trị hiện tại để so sánh
+    let currentStats = {
+        totalPets: {{ totalPets or 0 }},
+        totalAppointments: {{ totalAppointments or 0 }},
+        totalInvoices: {{ totalInvoices or 0 }}
+    };
+    
+    function updateDashboardData() {
+        const apiUrl = '/customer/dashboard/api/data';
+        console.log('Fetching dashboard data from:', apiUrl);
+        
+        fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Dashboard data received:', data);
+            if (data.success) {
+                // Cập nhật số liệu thống kê
+                const stats = data.data;
+                console.log('Stats:', stats);
+                
+                // Cập nhật số thú cưng
+                const petsValue = document.querySelector('.dashboard-grid .dashboard-card:nth-child(1) .dashboard-card-value');
+                if (petsValue) {
+                    const newValue = parseInt(stats.totalPets) || 0;
+                    const oldValue = parseInt(petsValue.textContent.trim()) || 0;
+                    if (newValue !== oldValue) {
+                        console.log('Updating pets:', oldValue, '->', newValue);
+                        petsValue.textContent = newValue;
+                        animateUpdate(petsValue);
+                        currentStats.totalPets = newValue;
+                    }
+                }
+                
+                // Cập nhật số lịch hẹn
+                const appointmentsValue = document.querySelector('.dashboard-grid .dashboard-card:nth-child(2) .dashboard-card-value');
+                if (appointmentsValue) {
+                    const newValue = parseInt(stats.totalAppointments) || 0;
+                    const oldValue = parseInt(appointmentsValue.textContent.trim()) || 0;
+                    if (newValue !== oldValue) {
+                        console.log('Updating appointments:', oldValue, '->', newValue);
+                        appointmentsValue.textContent = newValue;
+                        animateUpdate(appointmentsValue);
+                        currentStats.totalAppointments = newValue;
+                    }
+                }
+                
+                // Cập nhật số hóa đơn (card thứ 3 nằm trong thẻ <a>)
+                const invoicesCard = document.querySelector('.dashboard-grid a .dashboard-card');
+                const invoicesValue = invoicesCard ? invoicesCard.querySelector('.dashboard-card-value') : null;
+                if (invoicesValue) {
+                    const newValue = parseInt(stats.totalInvoices) || 0;
+                    const oldValue = parseInt(invoicesValue.textContent.trim()) || 0;
+                    if (newValue !== oldValue) {
+                        console.log('Updating invoices:', oldValue, '->', newValue);
+                        invoicesValue.textContent = newValue;
+                        animateUpdate(invoicesValue);
+                        currentStats.totalInvoices = newValue;
+                    }
+                } else {
+                    console.warn('Invoices value element not found');
+                }
+                
+                // Cập nhật bảng lịch hẹn sắp tới
+                updateAppointmentsTable(stats.upcomingAppointments);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching dashboard data:', error);
+        });
+    }
+    
+    function animateUpdate(element) {
+        element.style.transform = 'scale(1.2)';
+        element.style.transition = 'transform 0.3s';
+        setTimeout(() => {
+            element.style.transform = 'scale(1)';
+        }, 300);
+    }
+    
+    function updateAppointmentsTable(appointments) {
+        // Tìm phần lịch hẹn sắp tới
+        let appointmentsSection = document.getElementById('appointments-section');
+        if (!appointmentsSection) {
+            // Nếu không có section, tạo mới nếu có appointments
+            if (appointments.length > 0) {
+                createAppointmentsSection(appointments);
+            }
+            return;
+        }
+        
+        const tableBody = appointmentsSection.querySelector('table tbody');
+        if (!tableBody) return;
+        
+        // Tạo hash để so sánh nhanh
+        const newHash = JSON.stringify(appointments.map(a => ({
+            date: a.appointment_date,
+            pet: a.pet_name,
+            type: a.appointment_type,
+            status: a.status
+        })));
+        
+        const currentHash = tableBody.getAttribute('data-hash') || '';
+        
+        // Chỉ cập nhật nếu có thay đổi
+        if (newHash === currentHash && appointments.length > 0) {
+            return;
+        }
+        
+        // Cập nhật bảng
+        if (appointments.length === 0) {
+            // Ẩn section nếu không có appointments
+            appointmentsSection.style.display = 'none';
+            tableBody.setAttribute('data-hash', '[]');
+        } else {
+            appointmentsSection.style.display = 'block';
+            tableBody.innerHTML = appointments.map(apt => `
+                <tr>
+                    <td style="padding: 1rem; border-bottom: 1px solid #ddd;">${apt.appointment_date}</td>
+                    <td style="padding: 1rem; border-bottom: 1px solid #ddd;">${apt.pet_name}</td>
+                    <td style="padding: 1rem; border-bottom: 1px solid #ddd;">${apt.appointment_type}</td>
+                    <td style="padding: 1rem; border-bottom: 1px solid #ddd;">
+                        <span style="padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 1.2rem;
+                            background: ${apt.status_bg};
+                            color: ${apt.status_color};">
+                            ${apt.status_text}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+            
+            tableBody.setAttribute('data-hash', newHash);
+            
+            // Thêm animation khi có thay đổi
+            tableBody.style.opacity = '0.5';
+            setTimeout(() => {
+                tableBody.style.opacity = '1';
+                tableBody.style.transition = 'opacity 0.3s';
+            }, 100);
+        }
+    }
+    
+    function createAppointmentsSection(appointments) {
+        const container = document.querySelector('.container');
+        if (!container) return;
+        
+        const section = document.createElement('div');
+        section.id = 'appointments-section';
+        section.className = 'service-card';
+        section.style.marginTop = '3rem';
+        section.innerHTML = `
+            <h3 style="margin-bottom: 2rem; color: var(--primary-color);">Lịch hẹn sắp tới</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f4f6f9;">
+                            <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #ddd;">Ngày giờ</th>
+                            <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #ddd;">Thú cưng</th>
+                            <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #ddd;">Loại</th>
+                            <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #ddd;">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${appointments.map(apt => `
+                            <tr>
+                                <td style="padding: 1rem; border-bottom: 1px solid #ddd;">${apt.appointment_date}</td>
+                                <td style="padding: 1rem; border-bottom: 1px solid #ddd;">${apt.pet_name}</td>
+                                <td style="padding: 1rem; border-bottom: 1px solid #ddd;">${apt.appointment_type}</td>
+                                <td style="padding: 1rem; border-bottom: 1px solid #ddd;">
+                                    <span style="padding: 0.3rem 0.8rem; border-radius: 4px; font-size: 1.2rem;
+                                        background: ${apt.status_bg};
+                                        color: ${apt.status_color};">
+                                        ${apt.status_text}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        // Thêm vào sau phần Quick Actions
+        const quickActions = document.querySelector('.service-card');
+        if (quickActions && quickActions.nextSibling) {
+            container.insertBefore(section, quickActions.nextSibling);
+        } else {
+            container.appendChild(section);
+        }
+    }
+    
+    // Bắt đầu auto-refresh
+    const intervalId = setInterval(updateDashboardData, refreshInterval);
+    
+    // Cập nhật ngay khi trang load (sau 1 giây để tránh conflict với render ban đầu)
+    setTimeout(updateDashboardData, 1000);
+    
+    // Log để debug
+    console.log('Dashboard auto-refresh started. Interval:', refreshInterval + 'ms');
+});
+</script>
+
+{% include 'layouts/customer_footer.html' %}

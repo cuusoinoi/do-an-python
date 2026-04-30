@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    {% include 'layouts/admin_sidebar.html' %}
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        <main class="content">
+            <h1>Danh sách lưu chuồng</h1>
+            {% if flash.success %}
+                <div class="alert alert-success">{{ flash.success }}</div>
+            {% endif %}
+            {% if flash.error %}
+                <div class="alert alert-error">{{ flash.error }}</div>
+            {% endif %}
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Tìm theo khách hàng, thú cưng, số chuồng...">
+                <a href="/admin/pet-enclosures/add" class="btn btn-add"><i class="fas fa-plus"></i> Thêm lưu chuồng</a>
+            </div>
+            <div class="table-responsive">
+                <table class="admin-data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Số chuồng</th>
+                            <th>Khách hàng</th>
+                            <th>Thú cưng</th>
+                            <th>Check-in</th>
+                            <th>Check-out</th>
+                            <th>Giá/ngày</th>
+                            <th>Trạng thái</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if enclosures %}
+                            {% for row in enclosures %}
+                                <tr>
+                                    <td>{{ row.pet_enclosure_number }}</td>
+                                    <td>{{ row.customer_name }}</td>
+                                    <td>{{ row.pet_name }}</td>
+                                    <td>{{ row.check_in_date }}</td>
+                                    <td>{{ row.check_out_date or '-' }}</td>
+                                    <td>{{ number_format(row.daily_rate, 0, ',', '.') }} đ</td>
+                                    <td>
+                                        <span class="badge badge-{{ ('success' if row.pet_enclosure_status == 'Check In' else 'secondary') }}">
+                                            {{ row.pet_enclosure_status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="actions">
+                                            <a href="{{ site_url('admin/print/pet-enclosure/' ~ row.pet_enclosure_id) }}" class="btn btn-icon btn-print" title="In phiếu" target="_blank"><i class="fas fa-print"></i></a>
+                                            {% if row.pet_enclosure_status == 'Check In' %}
+                                                <a href="{{ site_url('admin/pet-enclosures/checkout/' ~ row.pet_enclosure_id) }}" class="btn btn-icon btn-success" title="Checkout"><i class="fas fa-sign-out-alt"></i></a>
+                                            {% endif %}
+                                            <a href="{{ site_url('admin/pet-enclosures/edit/' ~ row.pet_enclosure_id) }}" class="btn btn-icon btn-edit" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
+                                            <a href="{{ site_url('admin/pet-enclosures/delete/' ~ row.pet_enclosure_id) }}" class="btn btn-icon btn-delete" title="Xóa" onclick="return confirmDelete('Bạn có chắc muốn xóa lưu chuồng này?', this.href)"><i class="fas fa-trash-alt"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="8">Chưa có lưu chuồng nào.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                {% if totalPages > 1 %}
+                    <div class="pagination">
+                        {% if currentPage > 1 %}<a href="?page={{ currentPage - 1 }}" class="page-link">&laquo; Trước</a>{% endif %}
+                        {% for i in range(1, totalPages + 1) %}
+                            <a href="?page={{ i }}" class="page-link {{ ('active' if i == currentPage else '') }}">{{ i }}</a>
+                        {% endfor %}
+                        {% if currentPage < totalPages %}<a href="?page={{ currentPage + 1 }}" class="page-link">Sau &raquo;</a>{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+    <script src="/static/assets/js/script.js" defer></script>
+    <script>
+        document.getElementById("searchInput").addEventListener("keyup", function() {
+            const filter = this.value.toLowerCase();
+            document.querySelectorAll("#dataTable tbody tr").forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+            });
+        });
+    </script>
+</body>
+</html>

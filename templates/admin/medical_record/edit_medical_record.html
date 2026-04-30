@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    {% include 'layouts/admin_sidebar.html' %}
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        <main class="content">
+            <div class="form-container">
+                <h2>Chỉnh sửa phiếu khám</h2>
+                {% if flash.error %}
+                    <div class="alert alert-error">{{ flash.error }}</div>
+                {% endif %}
+                <form action="{{ site_url('admin/medical-records/update/' ~ record.medical_record_id) }}" method="post">
+                    
+                    <div class="form-group">
+                        <label for="customer_id">Khách hàng <span class="required-field">*</span></label>
+                        <select id="customer_id" name="customer_id" required>
+                            <option value="">-- Chọn khách hàng --</option>
+                            {% for customer in customers %}
+                                <option value="{{ customer.customer_id }}" {{ ('selected' if customer.customer_id == record.customer_id else '') }}>{{ customer.customer_name }} - {{ customer.customer_phone_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet_id">Thú cưng <span class="required-field">*</span></label>
+                        <select id="pet_id" name="pet_id" required>
+                            <option value="">-- Chọn thú cưng --</option>
+                            {% for pet in pets %}
+                                <option value="{{ pet.pet_id }}" data-customer="{{ pet.customer_id }}" {{ ('selected' if pet.pet_id == record.pet_id else '') }}>{{ pet.pet_name }} - {{ pet.pet_species }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="doctor_id">Bác sĩ <span class="required-field">*</span></label>
+                        <select id="doctor_id" name="doctor_id" required>
+                            <option value="">-- Chọn bác sĩ --</option>
+                            {% for doctor in doctors %}
+                                <option value="{{ doctor.doctor_id }}" {{ ('selected' if doctor.doctor_id == record.doctor_id else '') }}>{{ doctor.doctor_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Loại khám <span class="required-field">*</span></label>
+                        <select id="type" name="type" required>
+                            <option value="">-- Chọn loại khám --</option>
+                            <option value="Khám bệnh" {{ ('selected' if record.medical_record_type == 'Khám bệnh' else '') }}>Khám bệnh</option>
+                            <option value="Vaccine" {{ ('selected' if record.medical_record_type == 'Vaccine' else '') }}>Tiêm Vaccine</option>
+                            <option value="Tái khám" {{ ('selected' if record.medical_record_type == 'Tái khám' else '') }}>Tái khám</option>
+                            <option value="Khác" {{ ('selected' if record.medical_record_type == 'Khác' else '') }}>Khác</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="visit_date">Ngày khám <span class="required-field">*</span></label>
+                        <input type="datetime-local" id="visit_date" name="visit_date" value="{{ date('Y-m-d\TH:i', strtotime(record.medical_record_visit_date)) }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="summary">Tóm tắt</label>
+                        <textarea id="summary" name="summary" rows="2">{{ record.medical_record_summary }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="details">Chi tiết</label>
+                        <textarea id="details" name="details" rows="4">{{ record.medical_record_details }}</textarea>
+                    </div>
+                    <!-- Vaccine fields -->
+                    <div id="vaccineFields" style="display: {{ ('block' if record.medical_record_type == 'Vaccine' else 'none') }};">
+                        <h3>Thông tin Vaccine</h3>
+                        <div class="form-group">
+                            <label for="vaccine_name">Tên vaccine</label>
+                            <input type="text" id="vaccine_name" name="vaccine_name" value="{{ vaccination.vaccine_name or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="batch_number">Số lô</label>
+                            <input type="text" id="batch_number" name="batch_number" value="{{ vaccination.batch_number or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="next_injection_date">Ngày tiêm tiếp theo</label>
+                            <input type="date" id="next_injection_date" name="next_injection_date" value="{{ vaccination.next_injection_date or '' }}">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Lưu</button>
+                        <a href="/admin/medical-records" class="btn btn-cancel">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+    <script src="/static/assets/js/script.js" defer></script>
+    <script>
+        // Show/hide vaccine fields based on type selection
+        document.getElementById('type').addEventListener('change', function() {
+            const vaccineFields = document.getElementById('vaccineFields');
+            vaccineFields.style.display = this.value === 'Vaccine' ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

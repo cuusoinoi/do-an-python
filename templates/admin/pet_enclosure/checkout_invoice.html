@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    {% include 'layouts/admin_sidebar.html' %}
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        <main class="content">
+            <div class="form-container form-container-wide">
+                <h2>Checkout & Tạo hóa đơn - Chuồng #{{ enclosure.pet_enclosure_number }}</h2>
+                
+                {% if flash.error %}
+                    <div class="alert alert-error">{{ flash.error }}</div>
+                {% endif %}
+
+                <!-- Thông tin tổng quan -->
+                <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <p><strong>Khách hàng:</strong> {{ customer.customer_name }}</p>
+                            <p><strong>SĐT:</strong> {{ customer.customer_phone_number }}</p>
+                        </div>
+                        <div>
+                            <p><strong>Thú cưng:</strong> {{ pet.pet_name }}</p>
+                            <p><strong>Loài/Giống:</strong> {{ pet.pet_species or '-' }}</p>
+                        </div>
+                    </div>
+                    <hr style="margin: 15px 0;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                        <p><strong>Check-in:</strong> {{ date('d/m/Y H:i', strtotime(enclosure.check_in_date)) }}</p>
+                        <p><strong>Check-out:</strong> {{ date('d/m/Y H:i') }}</p>
+                        <p><strong>Số ngày:</strong> {{ days }} ngày</p>
+                    </div>
+                </div>
+
+                <form action="{{ site_url('admin/pet-enclosures/checkout/' ~ enclosure.pet_enclosure_id) }}" method="post">
+                    
+
+                    <!-- Bảng dịch vụ -->
+                    <h3>Chi tiết dịch vụ</h3>
+                    <table class="admin-data-table" id="servicesTable">
+                        <thead>
+                            <tr>
+                                <th>Dịch vụ</th>
+                                <th style="width: 100px;">Số lượng</th>
+                                <th style="width: 150px;">Đơn giá</th>
+                                <th style="width: 150px;">Thành tiền</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dịch vụ lưu chuồng -->
+                            <tr class="service-row">
+                                <td>
+                                    <select name="service_ids[]" class="service-select" required>
+                                        <option value="">-- Chọn dịch vụ --</option>
+                                        {% for st in serviceTypes %}
+                                            <option value="{{ st.service_type_id }}" {{ ('selected' if stripos(st.service_name, 'lưu chuồng') != false else '') }}>{{ st.service_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="number" name="quantities[]" value="{{ days }}" min="1" class="quantity-input"></td>
+                                <td><input type="number" name="unit_prices[]" value="{{ enclosure.daily_rate }}" class="unit-price-input"></td>
+                                <td><input type="number" name="total_prices[]" value="{{ enclosureFee }}" class="total-price-input" readonly></td>
+                                <td></td>
+                            </tr>
+                            {% if overtimeFee > 0 %}
+                            <!-- Phí quá giờ -->
+                            <tr class="service-row">
+                                <td>
+                                    <select name="service_ids[]" class="service-select">
+                                        <option value="">-- Phí quá giờ --</option>
+                                        {% for st in serviceTypes %}
+                                            <option value="{{ st.service_type_id }}" {{ ('selected' if stripos(st.service_name, 'quá giờ') != false else '') }}>{{ st.service_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td><input type="number" name="quantities[]" value="1" min="1" class="quantity-input"></td>
+                                <td><input type="number" name="unit_prices[]" value="{{ overtimeFee }}" class="unit-price-input"></td>
+                                <td><input type="number" name="total_prices[]" value="{{ overtimeFee }}" class="total-price-input" readonly></td>
+                                <td><button type="button" class="btn btn-icon btn-delete remove-row"><i class="fas fa-times"></i></button></td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <button type="button" id="addServiceBtn" class="btn btn-add" style="margin-bottom: 20px;"><i class="fas fa-plus"></i> Thêm dịch vụ</button>
+
+                    <!-- Tổng hợp -->
+                    <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label for="subtotal">Tạm tính</label>
+                                <input type="number" id="subtotal" name="subtotal" value="{{ enclosureFee + overtimeFee }}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="deposit">Đã cọc</label>
+                                <input type="number" id="deposit" name="deposit" value="{{ enclosure.deposit }}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="discount">Giảm giá</label>
+                                <input type="number" id="discount" name="discount" value="0" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="total_amount"><strong>Tổng thanh toán</strong></label>
+                                <input type="number" id="total_amount" name="total_amount" value="{{ enclosureFee + overtimeFee - enclosure.deposit }}" readonly style="font-weight: bold; font-size: 18px; color: #dc3545;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save"><i class="fas fa-check"></i> Checkout & Tạo hóa đơn</button>
+                        <a href="/admin/pet-enclosures" class="btn btn-cancel">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+
+    <script src="/static/assets/js/script.js" defer></script>
+    <script>
+        const serviceTypes = {{ tojson(serviceTypes) }};
+
+        // Calculate row total
+        function calculateRowTotal(row) {
+            const qty = parseInt(row.querySelector('.quantity-input').value) || 0;
+            const price = parseInt(row.querySelector('.unit-price-input').value) || 0;
+            row.querySelector('.total-price-input').value = qty * price;
+            calculateTotals();
+        }
+
+        // Calculate all totals
+        function calculateTotals() {
+            let subtotal = 0;
+            document.querySelectorAll('.total-price-input').forEach(input => {
+                subtotal += parseInt(input.value) || 0;
+            });
+            document.getElementById('subtotal').value = subtotal;
+            
+            const deposit = parseInt(document.getElementById('deposit').value) || 0;
+            const discount = parseInt(document.getElementById('discount').value) || 0;
+            document.getElementById('total_amount').value = subtotal - deposit - discount;
+        }
+
+        // Add event listeners
+        document.querySelectorAll('.quantity-input, .unit-price-input').forEach(input => {
+            input.addEventListener('input', function() {
+                calculateRowTotal(this.closest('tr'));
+            });
+        });
+
+        document.getElementById('discount').addEventListener('input', calculateTotals);
+
+        // Remove row
+        document.querySelectorAll('.remove-row').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.closest('tr').remove();
+                calculateTotals();
+            });
+        });
+
+        // Add new service row
+        document.getElementById('addServiceBtn').addEventListener('click', function() {
+            const tbody = document.querySelector('#servicesTable tbody');
+            const options = serviceTypes.map(st => `<option value="${st.service_type_id}">${st.service_name}</option>`).join('');
+            const newRow = document.createElement('tr');
+            newRow.className = 'service-row';
+            newRow.innerHTML = `
+                <td>
+                    <select name="service_ids[]" class="service-select">
+                        <option value="">-- Chọn dịch vụ --</option>
+                        ${options}
+                    </select>
+                </td>
+                <td><input type="number" name="quantities[]" value="1" min="1" class="quantity-input"></td>
+                <td><input type="number" name="unit_prices[]" value="0" class="unit-price-input"></td>
+                <td><input type="number" name="total_prices[]" value="0" class="total-price-input" readonly></td>
+                <td><button type="button" class="btn btn-icon btn-delete remove-row"><i class="fas fa-times"></i></button></td>
+            `;
+            tbody.appendChild(newRow);
+
+            // Add event listeners to new inputs
+            newRow.querySelector('.quantity-input').addEventListener('input', function() {
+                calculateRowTotal(newRow);
+            });
+            newRow.querySelector('.unit-price-input').addEventListener('input', function() {
+                calculateRowTotal(newRow);
+            });
+            newRow.querySelector('.remove-row').addEventListener('click', function() {
+                newRow.remove();
+                calculateTotals();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+{% include 'layouts/customer_header.html' %}
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Lịch sử khám bệnh</h2>
+
+        <div class="customer-form" style="max-width: 400px; margin-bottom: 3rem;">
+            <form method="GET" action="/customer/dashboard/medical-records">
+                <div class="form-group">
+                    <label for="pet_id">Chọn thú cưng</label>
+                    <select id="pet_id" name="pet_id" onchange="this.form.submit()">
+                        <option value="">-- Tất cả thú cưng --</option>
+                        {% for pet in pets %}
+                            <option value="{{ pet.pet_id }}" 
+                                    {{ ('selected' if (selectedPetId == pet.pet_id) else '') }}>
+                                {{ pet.pet_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        {% if not records %}
+            <div class="service-card" style="text-align: center; padding: 4rem;">
+                <i class="fas fa-file-medical" style="font-size: 5rem; color: #ddd; margin-bottom: 2rem;"></i>
+                <p style="font-size: 1.6rem; color: #666;">
+                    {{ ('Thú cưng này chưa có lịch sử khám bệnh' if selectedPetId else 'Chưa có lịch sử khám bệnh') }}
+                </p>
+            </div>
+        {% else %}
+            <div class="services-grid">
+                {% for record in records %}
+                    <div class="service-card" style="padding: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                            <div>
+                                <h3 style="color: var(--primary-color); margin-bottom: 0.5rem; font-size: 1.8rem;">
+                                    <i class="fas fa-calendar-alt"></i> 
+                                    {{ date('d/m/Y', strtotime(record.medical_record_visit_date)) }}
+                                </h3>
+                                <p style="color: #666; font-size: 1.3rem; margin: 0;">
+                                    <i class="fas fa-paw"></i> {{ record.pet_name or 'N/A' }}
+                                </p>
+                            </div>
+                            <span style="padding: 0.5rem 1rem; background: var(--primary-color); color: #fff; border-radius: 6px; font-size: 1.2rem; font-weight: 600;">
+                                {{ record.medical_record_type }}
+                            </span>
+                        </div>
+
+                        <div style="margin-bottom: 1rem;">
+                            <p style="margin-bottom: 0.8rem;">
+                                <strong style="color: var(--text-color); display: inline-block; min-width: 100px;">
+                                    <i class="fas fa-user-doctor"></i> Bác sĩ:
+                                </strong>
+                                <span style="color: #666;">{{ record.doctor_name or 'Chưa xác định' }}</span>
+                            </p>
+                        </div>
+
+                        {% if record.medical_record_summary %}
+                            <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 6px; border-left: 4px solid var(--primary-color);">
+                                <p style="margin: 0; color: #666; line-height: 1.6;">
+                                    <strong style="color: var(--text-color); display: block; margin-bottom: 0.5rem;">
+                                        <i class="fas fa-clipboard-list"></i> Tóm tắt:
+                                    </strong>
+                                    {{ nl2br(record.medical_record_summary) }}
+                                </p>
+                            </div>
+                        {% endif %}
+
+                        {% if record.medical_record_details %}
+                            <div style="padding: 1rem; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;">
+                                <p style="margin: 0; color: #666; line-height: 1.6;">
+                                    <strong style="color: var(--text-color); display: block; margin-bottom: 0.5rem;">
+                                        <i class="fas fa-file-alt"></i> Chi tiết:
+                                    </strong>
+                                    {{ nl2br(record.medical_record_details) }}
+                                </p>
+                            </div>
+                        {% endif %}
+
+                        {% if not record.medical_record_summary and not record.medical_record_details %}
+                            <p style="color: #999; font-style: italic; text-align: center; padding: 1rem;">
+                                <i class="fas fa-info-circle"></i> Chưa có thông tin chi tiết
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% include 'layouts/customer_footer.html' %}

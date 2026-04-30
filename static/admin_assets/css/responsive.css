@@ -1,0 +1,80 @@
+/* Mobile & Tablet */
+@media (max-width: 1023px) {
+    .hide-on-mobile-tablet {
+        display: none;
+    }
+    
+    body {
+        overflow: hidden;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 240px;
+        z-index: 999;
+        transform: translateX(-100%);
+    }
+
+    .sidebar--open {
+        transform: translateX(0);
+    }
+
+    .overlay--active {
+        display: block;
+    }
+
+    /* Trên mobile luôn hiển thị đầy đủ text và submenu */
+    .sidebar--collapsed {
+        width: 240px;
+    }
+
+    .sidebar__text,
+    .sidebar__arrow {
+        display: inline;
+    }
+
+    .topbar__username,
+    .topbar__clinic-info {
+        display: none;
+    }
+
+    .chart-card {
+        flex: 1 1 100%; /* Trên mobile thì mỗi biểu đồ chiếm 1 hàng */
+    }
+
+    .search-box,
+    .filter-box {
+        flex-direction: column-reverse;
+    }
+    
+    .totals,
+    .actions {
+        flex-direction: column;
+    }
+}
+
+/* Tablet */
+@media (min-width: 740px) and (max-width: 1023px) {
+    .hide-on-tablet {
+        display: none;
+    }
+}
+
+/* Mobile */
+@media (max-width: 739px) {
+    .hide-on-mobile {
+        display: none;
+    }
+
+    .login {
+        width: 90%;
+        padding: 30px 25px;
+    }
+
+    .login__title {
+        font-size: 2rem;
+    }
+}

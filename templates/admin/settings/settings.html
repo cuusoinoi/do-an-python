@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    {% include 'layouts/admin_sidebar.html' %}
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        <main class="content">
+            <div class="form-container">
+                <h2>Cài đặt chung</h2>
+                {% if flash.success %}
+                    <div class="alert alert-success">{{ flash.success }}</div>
+                {% endif %}
+                {% if flash.error %}
+                    <div class="alert alert-error">{{ flash.error }}</div>
+                {% endif %}
+                <form action="/admin/settings/update" method="post">
+                    
+                    <div class="form-group">
+                        <label for="clinic_name">Tên phòng khám</label>
+                        <input type="text" id="clinic_name" name="clinic_name" value="{{ settings.clinic_name or 'UIT Petcare' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="clinic_address_1">Địa chỉ 1</label>
+                        <input type="text" id="clinic_address_1" name="clinic_address_1" value="{{ settings.clinic_address_1 or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="clinic_address_2">Địa chỉ 2</label>
+                        <input type="text" id="clinic_address_2" name="clinic_address_2" value="{{ settings.clinic_address_2 or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone_number_1">Số điện thoại 1</label>
+                        <input type="text" id="phone_number_1" name="phone_number_1" value="{{ settings.phone_number_1 or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone_number_2">Số điện thoại 2</label>
+                        <input type="text" id="phone_number_2" name="phone_number_2" value="{{ settings.phone_number_2 or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="representative_name">Tên người đại diện</label>
+                        <input type="text" id="representative_name" name="representative_name" value="{{ settings.representative_name or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="default_daily_rate">Giá lưu chuồng mặc định (VNĐ/ngày)</label>
+                        <input type="number" id="default_daily_rate" name="default_daily_rate" value="{{ settings.default_daily_rate or 100000 }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="checkout_hour">Giờ checkout</label>
+                        <input type="time" id="checkout_hour" name="checkout_hour" value="{{ settings.checkout_hour or '18:00' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="overtime_fee_per_hour">Phí quá giờ (VNĐ/giờ)</label>
+                        <input type="number" id="overtime_fee_per_hour" name="overtime_fee_per_hour" value="{{ settings.overtime_fee_per_hour or 10000 }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="signing_place">Nơi ký</label>
+                        <input type="text" id="signing_place" name="signing_place" value="{{ settings.signing_place or '' }}">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Lưu cài đặt</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+    <script src="/static/assets/js/script.js" defer></script>
+</body>
+</html>

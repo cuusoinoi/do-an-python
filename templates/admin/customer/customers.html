@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+
+<body>
+    <div class="overlay" id="overlay"></div>
+
+    {% include 'layouts/admin_sidebar.html' %}
+
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        
+        <main class="content">
+            <h1>Danh sách khách hàng</h1>
+
+            <!-- Flash messages -->
+            {% if flash.success %}
+                <div class="alert alert-success">
+                    {{ flash.success }}
+                </div>
+            {% endif %}
+
+            {% if flash.error %}
+                <div class="alert alert-error">
+                    {{ flash.error }}
+                </div>
+            {% endif %}
+
+            <!-- Thanh tìm kiếm -->
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Tìm theo tên, SDT, thẻ căn cước, địa chỉ hoặc ghi chú...">
+                <a href="/admin/customers/add" class="btn btn-add"><i class="fas fa-plus"></i> Thêm khách hàng</a>
+            </div>
+
+            <!-- Bảng danh sách -->
+            <div class="table-responsive">
+                <table class="admin-data-table" id="customerTable">
+                    <thead>
+                        <tr>
+                            <th>Họ tên</th>
+                            <th>Số điện thoại</th>
+                            <th>Thẻ căn cước</th>
+                            <th>Địa chỉ</th>
+                            <th>Ghi chú</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if customers %}
+                            {% for row in customers %}
+                                <tr>
+                                    <td>{{ row.customer_name }}</td>
+                                    <td>{{ row.customer_phone_number }}</td>
+                                    <td>{{ row.customer_identity_card }}</td>
+                                    <td>{{ row.customer_address }}</td>
+                                    <td>{{ row.customer_note }}</td>
+                                    <td>
+                                        <div class="actions">
+                                            <a href="{{ site_url('admin/customers/edit/' ~ row.customer_id) }}" class="btn btn-icon btn-edit" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
+                                            <a href="{{ site_url('admin/customers/delete/' ~ row.customer_id) }}" class="btn btn-icon btn-delete" title="Xóa" onclick="return confirmDelete('Bạn có chắc muốn xóa khách hàng này?', this.href)"><i class="fas fa-trash-alt"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6">Chưa có khách hàng nào.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+
+                {% if totalPages > 1 %}
+                    <div class="pagination">
+                        {% if currentPage > 1 %}
+                            <a href="?page={{ currentPage - 1 }}" class="page-link">&laquo; Trước</a>
+                        {% endif %}
+
+                        {% for i in range(1, totalPages + 1) %}
+                            <a href="?page={{ i }}" class="page-link {{ ('active' if i == currentPage else '') }}">{{ i }}</a>
+                        {% endfor %}
+
+                        {% if currentPage < totalPages %}
+                            <a href="?page={{ currentPage + 1 }}" class="page-link">Sau &raquo;</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </main>
+        
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+
+    <script src="/static/assets/js/script.js" defer></script>
+
+    <script>
+        // Lọc tự động theo input
+        document.getElementById("searchInput").addEventListener("keyup", function() {
+            const filter = this.value.toLowerCase();
+            const rows = document.querySelectorAll("#customerTable tbody tr");
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(filter) ? "" : "none";
+            });
+        });
+    </script>
+</body>
+
+</html>

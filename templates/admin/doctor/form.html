@@ -1,0 +1,18 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/doctors/store{% else %}/admin/doctors/update/{{ row.doctor_id }}{% endif %}">
+    <label>Ho ten</label>
+    <input type="text" name="fullname" value="{{ row.doctor_name if row else '' }}" required>
+    <label>Dien thoai</label>
+    <input type="text" name="phone" value="{{ row.doctor_phone_number if row else '' }}" required>
+    <label>CCCD</label>
+    <input type="text" name="identity_card" value="{{ row.doctor_identity_card if row else '' }}">
+    <label>Dia chi</label>
+    <input type="text" name="address" value="{{ row.doctor_address if row else '' }}" required>
+    <label>Ghi chu</label>
+    <textarea name="note">{{ row.doctor_note if row else '' }}</textarea>
+    <button type="submit">Luu</button>
+    <a href="/admin/doctors">Quay lai</a>
+</form>
+{% endblock %}

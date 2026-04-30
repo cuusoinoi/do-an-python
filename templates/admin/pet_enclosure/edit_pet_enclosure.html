@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    {% include 'layouts/admin_sidebar.html' %}
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        <main class="content">
+            <div class="form-container">
+                <h2>Chỉnh sửa lưu chuồng</h2>
+                {% if flash.error %}
+                    <div class="alert alert-error">{{ flash.error }}</div>
+                {% endif %}
+                <form action="{{ site_url('admin/pet-enclosures/update/' ~ enclosure.pet_enclosure_id) }}" method="post">
+                    
+                    <div class="form-group">
+                        <label for="customer_id">Khách hàng <span class="required-field">*</span></label>
+                        <select id="customer_id" name="customer_id" required>
+                            <option value="">-- Chọn khách hàng --</option>
+                            {% for customer in customers %}
+                                <option value="{{ customer.customer_id }}" {{ ('selected' if customer.customer_id == enclosure.customer_id else '') }}>{{ customer.customer_name }} - {{ customer.customer_phone_number }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet_id">Thú cưng <span class="required-field">*</span></label>
+                        <select id="pet_id" name="pet_id" required>
+                            <option value="">-- Chọn thú cưng --</option>
+                            {% for pet in pets %}
+                                <option value="{{ pet.pet_id }}" data-customer="{{ pet.customer_id }}" {{ ('selected' if pet.pet_id == enclosure.pet_id else '') }}>{{ pet.pet_name }} - {{ pet.pet_species }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="enclosure_number">Số chuồng <span class="required-field">*</span></label>
+                        <input type="text" id="enclosure_number" name="enclosure_number" value="{{ enclosure.pet_enclosure_number }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="check_in_date">Ngày check-in <span class="required-field">*</span></label>
+                        <input type="datetime-local" id="check_in_date" name="check_in_date" value="{{ date('Y-m-d\TH:i', strtotime(enclosure.check_in_date)) }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="check_out_date">Ngày check-out</label>
+                        <input type="datetime-local" id="check_out_date" name="check_out_date" value="{{ enclosure.check_out_date or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="daily_rate">Giá/ngày (VNĐ) <span class="required-field">*</span></label>
+                        <input type="number" id="daily_rate" name="daily_rate" value="{{ enclosure.daily_rate }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deposit">Đặt cọc (VNĐ)</label>
+                        <input type="number" id="deposit" name="deposit" value="{{ enclosure.deposit }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="emergency_limit">Hạn mức cấp cứu (VNĐ)</label>
+                        <input type="number" id="emergency_limit" name="emergency_limit" value="{{ enclosure.emergency_limit }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Trạng thái</label>
+                        <select id="status" name="status">
+                            <option value="Check In" {{ ('selected' if enclosure.pet_enclosure_status == 'Check In' else '') }}>Check In</option>
+                            <option value="Check Out" {{ ('selected' if enclosure.pet_enclosure_status == 'Check Out' else '') }}>Check Out</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="note">Ghi chú</label>
+                        <textarea id="note" name="note" rows="3">{{ enclosure.pet_enclosure_note }}</textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Lưu</button>
+                        <a href="/admin/pet-enclosures" class="btn btn-cancel">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+    <script src="/static/assets/js/script.js" defer></script>
+</body>
+</html>

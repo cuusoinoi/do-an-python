@@ -1,0 +1,52 @@
+:root {
+    --primary-color: #ec4899;
+    --secondary-color: #40c7e6;
+    --light-primary-color: #e66faa;
+    --light-secondary-color: #62cbe2;
+    --white-color: #fff;
+    --black-color: #000;
+    --text-color: #333;
+    --border-color: #dbdbdb;
+    --star-gold-color: #ffce3e;
+    --green-color: #28a745;
+    --light-green-color: #a5d6a7;
+    --cyan-color: #17a2b8;
+    --yellow-color: #ffc107;
+    --blue-color: #007bff;
+    --red-color: #dc3545;
+    --light-red-color: #f5b4b4;
+    --gray-color: #6c757d;
+}
+
+* {
+    box-sizing: inherit;
+    font-family: "Segoe UI", sans-serif;
+}
+
+html {
+    font-size: 62.5%; /* 62.5% = 10px = 1rem */
+    line-height: 1.6rem;
+    box-sizing: border-box;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes growth {
+    from {
+        transform: scale(var(--growth-from));
+    }
+    to {
+        transform: scale(var(--growth-to));
+    }
+}

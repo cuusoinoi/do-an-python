@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    {% include 'layouts/admin_sidebar.html' %}
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        <main class="content">
+            <div class="form-container">
+                <h2>Chỉnh sửa bác sĩ</h2>
+                {% if flash.error %}
+                    <div class="alert alert-error">{{ flash.error }}</div>
+                {% endif %}
+                <form action="{{ site_url('admin/doctors/update/' ~ doctor.doctor_id) }}" method="post">
+                    
+                    <div class="form-group">
+                        <label for="fullname">Họ tên <span class="required-field">*</span></label>
+                        <input type="text" id="fullname" name="fullname" value="{{ doctor.doctor_name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Số điện thoại <span class="required-field">*</span></label>
+                        <input type="text" id="phone" name="phone" value="{{ doctor.doctor_phone_number }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="identity_card">CCCD</label>
+                        <input type="text" id="identity_card" name="identity_card" value="{{ doctor.doctor_identity_card }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Địa chỉ <span class="required-field">*</span></label>
+                        <input type="text" id="address" name="address" value="{{ doctor.doctor_address }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="note">Ghi chú</label>
+                        <textarea id="note" name="note" rows="3">{{ doctor.doctor_note }}</textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Lưu</button>
+                        <a href="/admin/doctors" class="btn btn-cancel">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+    <script src="/static/assets/js/script.js" defer></script>
+</body>
+</html>

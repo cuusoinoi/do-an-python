@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+
+<body>
+    <div class="overlay" id="overlay"></div>
+
+    {% include 'layouts/admin_sidebar.html' %}
+
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        
+        <main class="content">
+            <div class="form-container">
+                <h2>Chỉnh sửa khách hàng</h2>
+
+                {% if flash.error %}
+                    <div class="alert alert-error">
+                        {{ flash.error }}
+                    </div>
+                {% endif %}
+
+                <form action="{{ site_url('admin/customers/update/' ~ customer.customer_id) }}" method="post">
+                    
+                    <div class="form-group">
+                        <label for="fullname">Họ tên <span class="required-field">*</span></label>
+                        <input type="text" id="fullname" name="fullname" value="{{ customer.customer_name }}" placeholder="Nhập họ tên khách hàng" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Số điện thoại <span class="required-field">*</span></label>
+                        <input type="number" id="phone" name="phone" value="{{ customer.customer_phone_number }}" placeholder="Nhập số điện thoại" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="identity_card">Thẻ căn cước</label>
+                        <input type="number" id="identity_card" name="identity_card" value="{{ customer.customer_identity_card }}" placeholder="Nhập thẻ căn cước">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Địa chỉ <span class="required-field">*</span></label>
+                        <input type="text" id="address" name="address" value="{{ customer.customer_address }}" placeholder="Nhập địa chỉ khách hàng" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="note">Ghi chú</label>
+                        <textarea id="note" name="note" rows="3" placeholder="Nhập ghi chú (nếu có)...">{{ customer.customer_note }}</textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Lưu</button>
+                        <a href="/admin/customers" class="btn btn-cancel">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+        
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+
+    <script src="/static/assets/js/script.js" defer></script>
+</body>
+
+</html>

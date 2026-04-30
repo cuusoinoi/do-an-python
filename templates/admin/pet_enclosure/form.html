@@ -1,0 +1,40 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/pet-enclosures/store{% else %}/admin/pet-enclosures/update/{{ row.pet_enclosure_id }}{% endif %}">
+    <label>Khach hang</label>
+    <select name="customer_id" required>
+        {% for c in customers %}
+        <option value="{{ c.customer_id }}" {% if row and row.customer_id == c.customer_id %}selected{% endif %}>{{ c.customer_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Thu cung</label>
+    <select name="pet_id" required>
+        {% for p in pets %}
+        <option value="{{ p.pet_id }}" {% if row and row.pet_id == p.pet_id %}selected{% endif %}>{{ p.pet_name }}</option>
+        {% endfor %}
+    </select>
+    <label>So chuong</label>
+    <input type="number" name="enclosure_number" value="{{ row.pet_enclosure_number if row else '' }}" required>
+    <label>Check in</label>
+    <input type="datetime-local" name="check_in_date" value="{{ row.check_in_date if row else '' }}" required>
+    <label>Check out</label>
+    <input type="datetime-local" name="check_out_date" value="{{ row.check_out_date if row else '' }}">
+    <label>Don gia ngay</label>
+    <input type="number" name="daily_rate" value="{{ row.daily_rate if row else settings.default_daily_rate if settings else 0 }}">
+    <label>Dat coc</label>
+    <input type="number" name="deposit" value="{{ row.deposit if row else 0 }}">
+    <label>Han muc khan cap</label>
+    <input type="number" name="emergency_limit" value="{{ row.emergency_limit if row else 0 }}">
+    <label>Ghi chu</label>
+    <textarea name="note">{{ row.pet_enclosure_note if row else '' }}</textarea>
+    <label>Trang thai</label>
+    <select name="status">
+        {% for s in ['Check In', 'Check Out'] %}
+        <option value="{{ s }}" {% if row and row.pet_enclosure_status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Luu</button>
+    <a href="/admin/pet-enclosures">Quay lai</a>
+</form>
+{% endblock %}

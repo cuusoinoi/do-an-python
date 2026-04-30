@@ -1,0 +1,53 @@
+{% include 'layouts/customer_header.html' %}
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Lịch tiêm chủng</h2>
+
+        <div class="customer-form" style="max-width: 400px; margin-bottom: 3rem;">
+            <form method="GET" action="/customer/dashboard/vaccinations">
+                <div class="form-group">
+                    <label for="pet_id">Chọn thú cưng</label>
+                    <select id="pet_id" name="pet_id" onchange="this.form.submit()">
+                        <option value="">-- Tất cả thú cưng --</option>
+                        {% for pet in pets %}
+                            <option value="{{ pet.pet_id }}" 
+                                    {{ ('selected' if (selectedPetId == pet.pet_id) else '') }}>
+                                {{ pet.pet_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        {% if not vaccinations %}
+            <div class="service-card" style="text-align: center; padding: 4rem;">
+                <i class="fas fa-syringe" style="font-size: 5rem; color: #ddd; margin-bottom: 2rem;"></i>
+                <p style="font-size: 1.6rem; color: #666;">Chưa có lịch tiêm chủng</p>
+            </div>
+        {% else %}
+            <div class="services-grid">
+                {% for vac in vaccinations %}
+                    <div class="service-card">
+                        <h3 style="color: var(--primary-color); margin-bottom: 1rem;">
+                            <i class="fas fa-syringe"></i> {{ vac.vaccine_name }}
+                        </h3>
+                        <p><strong>Ngày tiêm:</strong> {{ date('d/m/Y', strtotime(vac.vaccination_date)) }}</p>
+                        {% if vac.next_vaccination_date %}
+                            <p style="color: var(--primary-color); font-weight: 600;">
+                                <i class="fas fa-calendar-check"></i> 
+                                Mũi tiếp theo: {{ date('d/m/Y', strtotime(vac.next_vaccination_date)) }}
+                            </p>
+                        {% endif %}
+                        {% if vac.notes %}
+                            <p><strong>Ghi chú:</strong> {{ vac.notes }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% include 'layouts/customer_footer.html' %}

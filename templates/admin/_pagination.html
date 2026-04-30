@@ -1,0 +1,11 @@
+{% if total_pages > 1 %}
+<div style="margin-top: 16px;">
+    {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+            <strong>[{{ p }}]</strong>
+        {% else %}
+            <a href="?page={{ p }}{% if q is defined and q %}&q={{ q }}{% endif %}{% if status is defined and status %}&status={{ status }}{% endif %}">[{{ p }}]</a>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}

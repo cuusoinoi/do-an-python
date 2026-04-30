@@ -1,0 +1,92 @@
+{% include 'layouts/customer_header.html' %}
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Đặt lịch hẹn</h2>
+        
+        <div class="customer-form" style="max-width: 700px;">
+            <form method="POST" action="/customer/booking/create">
+                <div class="form-group">
+                    <label for="pet_id">Chọn thú cưng <span style="color: red;">*</span></label>
+                    <select id="pet_id" name="pet_id" required>
+                        <option value="">-- Chọn thú cưng --</option>
+                        {% if pets %}
+                            {% for pet in pets %}
+                                <option value="{{ pet.pet_id }}">
+                                    {{ pet.pet_name }} - {{ pet.pet_species or '' }}
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                    {% if not pets %}
+                        <small style="color: #c33;">
+                            Bạn chưa có thú cưng. 
+                            <a href="/customer/dashboard/pets/add" style="color: var(--primary-color);">
+                                Thêm thú cưng ngay
+                            </a>
+                        </small>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="appointment_type">Loại dịch vụ <span style="color: red;">*</span></label>
+                    <select id="appointment_type" name="appointment_type" required>
+                        <option value="">-- Chọn loại dịch vụ --</option>
+                        <option value="Khám">Khám bệnh</option>
+                        <option value="Spa">Spa & Chăm sóc</option>
+                        <option value="Tiêm chủng">Tiêm chủng</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="service_id">Dịch vụ cụ thể</label>
+                    <select id="service_id" name="service_id">
+                        <option value="">-- Chọn dịch vụ (tùy chọn) --</option>
+                        {% if services %}
+                            {% for service in services %}
+                                <option value="{{ service.service_type_id }}">
+                                    {{ service.service_name }}
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="doctor_id">Chọn bác sĩ</label>
+                    <select id="doctor_id" name="doctor_id">
+                        <option value="">-- Chọn bác sĩ (tùy chọn) --</option>
+                        {% if doctors %}
+                            {% for doctor in doctors %}
+                                <option value="{{ doctor.doctor_id }}">
+                                    {{ doctor.doctor_name }}
+                                </option>
+                            {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="appointment_date">Ngày hẹn <span style="color: red;">*</span></label>
+                    <input type="date" id="appointment_date" name="appointment_date" required 
+                           min="2000-01-01">
+                </div>
+
+                <div class="form-group">
+                    <label for="appointment_time">Giờ hẹn <span style="color: red;">*</span></label>
+                    <input type="time" id="appointment_time" name="appointment_time" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Ghi chú</label>
+                    <textarea id="notes" name="notes" rows="4" 
+                              placeholder="Nhập ghi chú (nếu có)"></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">Đặt lịch</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% include 'layouts/customer_footer.html' %}

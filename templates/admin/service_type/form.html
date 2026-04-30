@@ -1,0 +1,14 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/service-types/store{% else %}/admin/service-types/update/{{ row.service_type_id }}{% endif %}">
+    <label>Ten dich vu</label>
+    <input type="text" name="name" value="{{ row.service_name if row else '' }}" required>
+    <label>Mo ta</label>
+    <textarea name="description">{{ row.description if row else '' }}</textarea>
+    <label>Gia</label>
+    <input type="number" name="price" step="0.01" value="{{ row.price if row else 0 }}">
+    <button type="submit">Luu</button>
+    <a href="/admin/service-types">Quay lai</a>
+</form>
+{% endblock %}

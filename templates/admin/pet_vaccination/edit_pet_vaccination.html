@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    {% include 'layouts/admin_sidebar.html' %}
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        <main class="content">
+            <div class="form-container">
+                <h2>Chỉnh sửa tiêm chủng</h2>
+                {% if flash.error %}
+                    <div class="alert alert-error">{{ flash.error }}</div>
+                {% endif %}
+                <form action="{{ site_url('admin/pet-vaccinations/update/' ~ vaccination.pet_vaccination_id) }}" method="post">
+                    
+                    <div class="form-group">
+                        <label for="vaccine_id">Vaccine <span class="required-field">*</span></label>
+                        <select id="vaccine_id" name="vaccine_id" required>
+                            <option value="">-- Chọn vaccine --</option>
+                            {% for vaccine in vaccines %}
+                                <option value="{{ vaccine.vaccine_id }}" {{ ('selected' if vaccine.vaccine_id == vaccination.vaccine_id else '') }}>{{ vaccine.vaccine_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer_id">Khách hàng <span class="required-field">*</span></label>
+                        <select id="customer_id" name="customer_id" required>
+                            <option value="">-- Chọn khách hàng --</option>
+                            {% for customer in customers %}
+                                <option value="{{ customer.customer_id }}" {{ ('selected' if customer.customer_id == vaccination.customer_id else '') }}>{{ customer.customer_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="pet_id">Thú cưng <span class="required-field">*</span></label>
+                        <select id="pet_id" name="pet_id" required>
+                            <option value="">-- Chọn thú cưng --</option>
+                            {% for pet in pets %}
+                                <option value="{{ pet.pet_id }}" data-customer="{{ pet.customer_id }}" {{ ('selected' if pet.pet_id == vaccination.pet_id else '') }}>{{ pet.pet_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="doctor_id">Bác sĩ <span class="required-field">*</span></label>
+                        <select id="doctor_id" name="doctor_id" required>
+                            <option value="">-- Chọn bác sĩ --</option>
+                            {% for doctor in doctors %}
+                                <option value="{{ doctor.doctor_id }}" {{ ('selected' if doctor.doctor_id == vaccination.doctor_id else '') }}>{{ doctor.doctor_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="vaccination_date">Ngày tiêm <span class="required-field">*</span></label>
+                        <input type="date" id="vaccination_date" name="vaccination_date" value="{{ vaccination.vaccination_date }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="next_vaccination_date">Ngày tiêm tiếp theo</label>
+                        <input type="date" id="next_vaccination_date" name="next_vaccination_date" value="{{ vaccination.next_vaccination_date }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Ghi chú</label>
+                        <textarea id="notes" name="notes" rows="3">{{ vaccination.notes }}</textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Lưu</button>
+                        <a href="/admin/pet-vaccinations" class="btn btn-cancel">Hủy</a>
+                    </div>
+                </form>
+            </div>
+        </main>
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+    <script src="/static/assets/js/script.js" defer></script>
+</body>
+</html>

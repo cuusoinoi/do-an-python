@@ -1,0 +1,38 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/pets/store{% else %}/admin/pets/update/{{ row.pet_id }}{% endif %}">
+    <label>Khach hang</label>
+    <select name="customer_id" required>
+        {% for c in customers %}
+        <option value="{{ c.customer_id }}" {% if row and row.customer_id == c.customer_id %}selected{% endif %}>{{ c.customer_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Ten thu cung</label>
+    <input type="text" name="name" value="{{ row.pet_name if row else '' }}" required>
+    <label>Loai/Giong</label>
+    <input type="text" name="species" value="{{ row.pet_species if row else '' }}">
+    <label>Gioi tinh</label>
+    <select name="gender">
+        <option value="" {% if not row or not row.pet_gender %}selected{% endif %}>--Chon--</option>
+        <option value="0" {% if row and row.pet_gender == '0' %}selected{% endif %}>Duc</option>
+        <option value="1" {% if row and row.pet_gender == '1' %}selected{% endif %}>Cai</option>
+    </select>
+    <label>Ngay sinh</label>
+    <input type="date" name="dob" value="{{ row.pet_dob if row else '' }}">
+    <label>Can nang</label>
+    <input type="number" step="0.01" name="weight" value="{{ row.pet_weight if row else '' }}">
+    <label>Triet san</label>
+    <select name="sterilization">
+        <option value="">--Chon--</option>
+        <option value="0" {% if row and row.pet_sterilization == '0' %}selected{% endif %}>Chua</option>
+        <option value="1" {% if row and row.pet_sterilization == '1' %}selected{% endif %}>Da</option>
+    </select>
+    <label>Dac diem</label>
+    <textarea name="characteristic">{{ row.pet_characteristic if row else '' }}</textarea>
+    <label>Di ung thuoc</label>
+    <textarea name="allergy">{{ row.pet_drug_allergy if row else '' }}</textarea>
+    <button type="submit">Luu</button>
+    <a href="/admin/pets">Quay lai</a>
+</form>
+{% endblock %}

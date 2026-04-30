@@ -1,0 +1,29 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/treatment-courses/store{% else %}/admin/treatment-courses/update/{{ row.treatment_course_id }}{% endif %}">
+    <label>Khach hang</label>
+    <select name="customer_id" required>
+        {% for c in customers %}
+        <option value="{{ c.customer_id }}" {% if row and row.customer_id == c.customer_id %}selected{% endif %}>{{ c.customer_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Thu cung</label>
+    <select name="pet_id" required>
+        {% for p in pets %}
+        <option value="{{ p.pet_id }}" {% if row and row.pet_id == p.pet_id %}selected{% endif %}>{{ p.pet_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Ngay bat dau</label>
+    <input type="date" name="start_date" value="{{ row.start_date if row else '' }}" required>
+    <label>Ngay ket thuc</label>
+    <input type="date" name="end_date" value="{{ row.end_date if row else '' }}">
+    <label>Trang thai</label>
+    <select name="status">
+        <option value="1" {% if not row or row.status == '1' %}selected{% endif %}>Dang dieu tri</option>
+        <option value="0" {% if row and row.status == '0' %}selected{% endif %}>Ket thuc</option>
+    </select>
+    <button type="submit">Luu</button>
+    <a href="/admin/treatment-courses">Quay lai</a>
+</form>
+{% endblock %}

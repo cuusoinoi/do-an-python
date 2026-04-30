@@ -1,0 +1,22 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/users/store{% else %}/admin/users/update/{{ row.id }}{% endif %}">
+    <label>Username</label>
+    <input type="text" name="username" value="{{ row.username if row else '' }}" required>
+    {% if action == 'add' %}
+    <label>Password</label>
+    <input type="password" name="password" required>
+    {% endif %}
+    <label>Ho ten</label>
+    <input type="text" name="fullname" value="{{ row.fullname if row else '' }}" required>
+    <label>Role</label>
+    <select name="role">
+        {% for r in ['admin', 'staff', 'customer'] %}
+        <option value="{{ r }}" {% if row and row.role == r %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Luu</button>
+    <a href="/admin/users">Quay lai</a>
+</form>
+{% endblock %}

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+
+<body>
+    <div class="overlay" id="overlay"></div>
+
+    {% include 'layouts/admin_sidebar.html' %}
+
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        
+        <main class="content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h1>Chi tiết lịch hẹn</h1>
+                <a href="/admin/appointments" class="btn btn-back"><i class="fas fa-arrow-left"></i> Quay lại</a>
+            </div>
+
+            <!-- Flash messages -->
+            {% if flash.success %}
+                <div class="alert alert-success">
+                    {{ flash.success }}
+                </div>
+            {% endif %}
+
+            {% if flash.error %}
+                <div class="alert alert-error">
+                    {{ flash.error }}
+                </div>
+            {% endif %}
+
+            {% if row %}
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h2 style="margin-bottom: 1.5rem; color: var(--primary-color);">Thông tin lịch hẹn</h2>
+                    
+                    <form method="POST" action="{{ site_url('admin/appointments/update/' ~ row.appointment_id) }}">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Mã lịch hẹn</label>
+                                <input type="text" value="#{{ row.appointment_id }}" disabled>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Trạng thái</label>
+                                
+                                <select name="status" required>
+                                    <option value="pending" {{ 'selected' if row.status == 'pending' else '' }}>Chờ xác nhận</option>
+                                    <option value="confirmed" {{ 'selected' if row.status == 'confirmed' else '' }}>Đã xác nhận</option>
+                                    <option value="completed" {{ 'selected' if row.status == 'completed' else '' }}>Đã hoàn thành</option>
+                                    <option value="cancelled" {{ 'selected' if row.status == 'cancelled' else '' }}>Đã hủy</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Khách hàng</label>
+                                <input type="text" value="{{ row.customer_name }} ({{ row.customer_phone_number }})" disabled>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Thú cưng</label>
+                                <input type="text" value="{{ row.pet_name }} ({{ row.pet_species or 'N/A' }})" disabled>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Loại dịch vụ <span style="color: red;">*</span></label>
+                                <select name="appointment_type" required>
+                                    <option value="Khám" {{ ('selected' if row.appointment_type == 'Khám' else '') }}>Khám</option>
+                                    <option value="Spa" {{ ('selected' if row.appointment_type == 'Spa' else '') }}>Spa</option>
+                                    <option value="Tiêm chủng" {{ ('selected' if row.appointment_type == 'Tiêm chủng' else '') }}>Tiêm chủng</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Ngày giờ hẹn <span style="color: red;">*</span></label>
+                                <input type="datetime-local" name="appointment_date" 
+                                       value="{{ row.appointment_date }}" 
+                                       required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Bác sĩ</label>
+                                <select name="doctor_id">
+                                    <option value="">-- Chưa chỉ định --</option>
+                                    {% if doctors %}
+                                        {% for doctor in doctors %}
+                                            <option value="{{ doctor.doctor_id }}" 
+                                                    {{ ('selected' if appointment.doctor_id == doctor.doctor_id else '') }}>
+                                                {{ doctor.doctor_name }}
+                                            </option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Dịch vụ</label>
+                                <select name="service_type_id">
+                                    <option value="">-- Chưa chọn --</option>
+                                    {% if services %}
+                                        {% for service in services %}
+                                            <option value="{{ service.service_type_id }}" 
+                                                    {{ ('selected' if row.service_type_id == service.service_type_id else '') }}>
+                                                {{ service.service_name }}
+                                            </option>
+                                        {% endfor %}
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ghi chú</label>
+                            <textarea name="notes" rows="4" placeholder="Ghi chú về lịch hẹn...">{{ row.notes or '' }}</textarea>
+                        </div>
+
+                        <div class="form-actions" style="margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Cập nhật</button>
+                            <a href="/admin/appointments" class="btn btn-cancel">Hủy</a>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Thông tin bổ sung</h3>
+                    <table class="admin-data-table" style="margin: 0;">
+                        <tr>
+                            <td style="width: 200px; font-weight: 600;">Ngày tạo:</td>
+                            <td>{{ row.created_at or 'N/A' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-error">
+                    Không tìm thấy lịch hẹn.
+                </div>
+            {% endif %}
+        </main>
+    </main>
+
+    <script src="/static/assets/js/script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,53 @@
+    <footer class="customer-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>UIT Petcare</h3>
+                    <p>Phòng khám thú y & Spa thú cưng chuyên nghiệp</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Liên hệ</h4>
+                    <p><i class="fas fa-map-marker-alt"></i> {{ (settings.clinic_address_1 if settings else '') or '' }}</p>
+                    <p><i class="fas fa-phone"></i> {{ (settings.phone_number_1 if settings else '') or '' }}</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Giờ làm việc</h4>
+                    <p>Thứ 2 - Chủ nhật: 8:00 - 20:00</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; {{ date('Y') }} UIT Petcare. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+    <script src="/static/assets/js/customer.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const successMsg = {{ (flash.success or '')|tojson }};
+            const errorMsg = {{ (flash.error or '')|tojson }};
+
+            const message = successMsg || errorMsg;
+            if (!message) return;
+
+            const toast = document.createElement('div');
+            toast.className = successMsg ? 'toast success' : 'toast error';
+            toast.style.top = '20px';
+            toast.style.right = '20px';
+            toast.style.left = 'auto';
+            toast.style.bottom = 'auto';
+            toast.style.minWidth = '320px';
+            toast.style.zIndex = '99999';
+            toast.innerHTML = successMsg
+                ? `<i class="fas fa-check-circle"></i><span>${message}</span>`
+                : `<i class="fas fa-exclamation-circle"></i><span>${message}</span>`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.classList.add('show'), 50);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

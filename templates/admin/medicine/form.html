@@ -1,0 +1,16 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/medicines/store{% else %}/admin/medicines/update/{{ row.medicine_id }}{% endif %}">
+    <label>Ten thuoc</label>
+    <input type="text" name="name" value="{{ row.medicine_name if row else '' }}" required>
+    <label>Duong dung</label>
+    <select name="route">
+        {% for r in ['PO', 'IM', 'IV', 'SC'] %}
+        <option value="{{ r }}" {% if row and row.medicine_route == r %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Luu</button>
+    <a href="/admin/medicines">Quay lai</a>
+</form>
+{% endblock %}

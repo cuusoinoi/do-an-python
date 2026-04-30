@@ -1,0 +1,41 @@
+
+<header class="topbar">
+    <div class="topbar__left">
+        <button class="topbar__toggle" id="toggleSidebar"><i class="fas fa-bars"></i></button>
+        <div class="topbar__clinic-info">
+            <div class="clinic-name">{{ settings.clinic_name or 'Phòng khám thú y' }}</div>
+            <div class="clinic-details">
+                {{ settings.clinic_address_1 or '' }}
+                {{ (', ' ~ settings.clinic_address_2) if settings and settings.clinic_address_2 else '' }}
+                {{ (' | ' ~ settings.phone_number_1) if settings and settings.phone_number_1 else '' }}
+                {{ (' - ' ~ settings.phone_number_2) if settings and settings.phone_number_2 else '' }}
+            </div>
+        </div>
+    </div>
+    <div class="topbar__actions">
+        <a href="/customer" target="_blank" class="btn-customer-link" title="Xem trang Customer">
+            <i class="fas fa-external-link-alt"></i>
+            <span>Customer</span>
+        </a>
+        <div class="topbar__user">
+            <div class="topbar__user-info">
+                <img src="/static/admin_assets/images/{{ currentUser.avatar or 'default-avatar.jpg' }}" alt="avatar" class="topbar__avatar" />
+                <span class="topbar__username">{{ request.session.get('fullname') }}</span>
+            </div>
+            <div class="topbar__dropdown">
+                <a href="/admin/users/edit/{{ currentUser.id or 0 }}" class="topbar__myaccount">
+                    <i class="fa-solid fa-circle-user"></i> Thông tin tài khoản
+                </a>
+                <a href="/admin/users/change-password" class="topbar__changepassword">
+                    <i class="fa-solid fas fa-key"></i> Đổi mật khẩu
+                </a>
+                <button id="themeToggle" class="topbar__theme-toggle" title="Chuyển giao diện">
+                    <i class="fa-solid fa-moon"></i> <span id="themeToggleText">Giao diện tối</span>
+                </button>
+                <a href="/admin/logout" class="topbar__logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+                </a>
+            </div>
+        </div>
+    </div>
+</header>

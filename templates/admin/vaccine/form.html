@@ -1,0 +1,12 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/vaccines/store{% else %}/admin/vaccines/update/{{ row.vaccine_id }}{% endif %}">
+    <label>Ten vaccine</label>
+    <input type="text" name="name" value="{{ row.vaccine_name if row else '' }}" required>
+    <label>Mo ta</label>
+    <textarea name="description">{{ row.description if row else '' }}</textarea>
+    <button type="submit">Luu</button>
+    <a href="/admin/vaccines">Quay lai</a>
+</form>
+{% endblock %}

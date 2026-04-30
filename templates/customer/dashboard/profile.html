@@ -1,0 +1,40 @@
+{% include 'layouts/customer_header.html' %}
+
+<section class="section">
+    <div class="container">
+        <h2 class="section-title">Thông tin cá nhân</h2>
+        
+        <div class="customer-form" style="max-width: 600px;">
+            <form method="POST" action="/customer/dashboard/profile">
+                <div class="form-group">
+                    <label for="customer_name">Họ và tên</label>
+                    <input type="text" id="customer_name" name="customer_name" 
+                           value="{{ customer.customer_name or '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_phone_number">Số điện thoại</label>
+                    <input type="tel" id="customer_phone_number" name="customer_phone_number" 
+                           value="{{ customer.customer_phone_number or '' }}" 
+                           readonly style="background: #f5f5f5;">
+                    <small style="color: #666;">Số điện thoại không thể thay đổi</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_email">Email</label>
+                    <input type="email" id="customer_email" name="customer_email" 
+                           value="{{ customer.customer_email or '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="customer_address">Địa chỉ</label>
+                    <textarea id="customer_address" name="customer_address" rows="3">{{ customer.customer_address or '' }}</textarea>
+                </div>
+
+                <button type="submit" class="btn-submit">Cập nhật thông tin</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% include 'layouts/customer_footer.html' %}

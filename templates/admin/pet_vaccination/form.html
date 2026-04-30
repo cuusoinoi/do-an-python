@@ -1,0 +1,38 @@
+{% extends "_base.html" %}
+{% block content %}
+<h1>{{ title }}</h1>
+<form method="post" action="{% if action == 'add' %}/admin/pet-vaccinations/store{% else %}/admin/pet-vaccinations/update/{{ row.pet_vaccination_id }}{% endif %}">
+    <label>Vaccine</label>
+    <select name="vaccine_id" required>
+        {% for v in vaccines %}
+        <option value="{{ v.vaccine_id }}" {% if row and row.vaccine_id == v.vaccine_id %}selected{% endif %}>{{ v.vaccine_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Khach hang</label>
+    <select name="customer_id" required>
+        {% for c in customers %}
+        <option value="{{ c.customer_id }}" {% if row and row.customer_id == c.customer_id %}selected{% endif %}>{{ c.customer_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Thu cung</label>
+    <select name="pet_id" required>
+        {% for p in pets %}
+        <option value="{{ p.pet_id }}" {% if row and row.pet_id == p.pet_id %}selected{% endif %}>{{ p.pet_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Bac si</label>
+    <select name="doctor_id" required>
+        {% for d in doctors %}
+        <option value="{{ d.doctor_id }}" {% if row and row.doctor_id == d.doctor_id %}selected{% endif %}>{{ d.doctor_name }}</option>
+        {% endfor %}
+    </select>
+    <label>Ngay tiem</label>
+    <input type="date" name="vaccination_date" value="{{ row.vaccination_date if row else '' }}" required>
+    <label>Ngay tiem tiep theo</label>
+    <input type="date" name="next_vaccination_date" value="{{ row.next_vaccination_date if row else '' }}">
+    <label>Ghi chu</label>
+    <textarea name="notes">{{ row.notes if row else '' }}</textarea>
+    <button type="submit">Luu</button>
+    <a href="/admin/pet-vaccinations">Quay lai</a>
+</form>
+{% endblock %}

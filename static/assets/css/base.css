@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Noto+Sans:wght@300;400;500;600;700&display=swap');
+
+/* iOS San Francisco font support */
+@supports (-webkit-touch-callout: none) {
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", "Roboto", "Noto Sans", sans-serif;
+    }
+}
+
+:root {
+    --primary-color: #B8860B;
+    --secondary-color: #8B4513;
+    --light-primary-color: #D4A84B;
+    --light-secondary-color: #A0522D;
+    --white-color: #fff;
+    --black-color: #000;
+    --text-color: #333;
+    --border-color: #dbdbdb;
+    --star-gold-color: #ffce3e;
+    --green-color: #28a745;
+    --light-green-color: #a5d6a7;
+    --cyan-color: #17a2b8;
+    --yellow-color: #ffc107;
+    --blue-color: #007bff;
+    --red-color: #dc3545;
+    --light-red-color: #f5b4b4;
+    --gray-color: #6c757d;
+}
+
+* {
+    box-sizing: inherit;
+}
+
+html {
+    font-size: 62.5%; /* 62.5% = 10px = 1rem */
+    line-height: 1.6rem;
+    box-sizing: border-box;
+}
+
+body {
+    /* iOS: San Francisco, Android: Roboto, Windows: Segoe UI, Fallback: Roboto/Noto Sans */
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "Roboto", "Noto Sans", "Helvetica Neue", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", sans-serif;
+    font-size: 1.4rem;
+    line-height: 1.6;
+    letter-spacing: 0;
+    color: var(--text-color);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "Roboto", "Noto Sans", sans-serif;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: 0;
+    color: var(--text-color);
+}
+
+p, span, div, a, button, input, select, textarea, label {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", "Roboto", "Noto Sans", sans-serif;
+    letter-spacing: 0;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes growth {
+    from {
+        transform: scale(var(--growth-from));
+    }
+    to {
+        transform: scale(var(--growth-to));
+    }
+}
