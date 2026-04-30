@@ -56,6 +56,6 @@ This checklist tracks route-level parity between the original and current implem
 
 ## Final parity pass
 
-- [ ] pixel-level UI parity with legacy templates
+- [ ] pixel-level UI consistency across templates
 - [ ] JS behavior parity on all list/forms
 - [ ] route-by-route manual smoke tested

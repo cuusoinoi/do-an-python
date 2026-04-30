@@ -1,6 +1,6 @@
 # UIT Petcare - FastAPI Web Application
 
-Hệ thống chăm sóc thú cưng toàn diện được xây dựng bằng **FastAPI + Jinja2 + MySQL**, mô phỏng nghiệp vụ từ dự án PHP/Java với giao diện web cho **Admin/Staff** và **Customer**.
+Hệ thống chăm sóc thú cưng toàn diện được xây dựng bằng **FastAPI + Jinja2 + MySQL** với giao diện web cho **Admin/Staff** và **Customer**.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-yellow)
@@ -217,4 +217,4 @@ python run_dev.py
 
 ---
 
-**UIT Petcare Python** phục vụ mục tiêu học tập và mô phỏng vận hành thực tế phòng khám thú cưng trên nền web.
+**UIT Petcare Python** là hệ thống quản lý vận hành phòng khám thú cưng trên nền web.

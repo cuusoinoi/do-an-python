@@ -56,7 +56,7 @@ def dashboard_index(request: Request):
             "total_appointments": total_appointments,
             "total_invoices": total_invoices,
             "upcoming_appointments": upcoming_appointments,
-            # Keep camelCase keys for parity with original PHP views/scripts.
+            # Keep camelCase keys for template JavaScript compatibility.
             "totalPets": len(pets),
             "totalAppointments": total_appointments,
             "totalInvoices": total_invoices,
