@@ -45,7 +45,7 @@
 
         <li style="margin-bottom: 15px;">
             <div style="font-weight: bold; text-decoration: underline;">PHÍ & THANH TOÁN</div>
-            <div>- Đơn giá: {{ number_format(enclosure.daily_rate or 0, 0, ",", ".") }} đ/ngày. Phí phát sinh theo bảng giá/thỏa thuận.</div>
+            <div>- Đơn giá: {{ number_format(displayDailyRate if displayDailyRate is defined else (enclosure.daily_rate or 0), 0, ",", ".") }} đ/ngày. Phí phát sinh theo bảng giá/thỏa thuận.</div>
             <div>- Đã cọc: {{ number_format(enclosure.deposit or 0, 0, ",", ".") }} đ. Thanh toán đủ khi nhận thú cưng.</div>
             <div>- Nhận trễ giờ quy định có thể phụ thu: {{ number_format(settings.overtime_fee_per_hour or 0, 0, ",", ".") }} đ/giờ.</div>
         </li>

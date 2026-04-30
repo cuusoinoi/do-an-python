@@ -47,6 +47,17 @@
                             <label for="invoice_date">Ngày hóa đơn</label>
                             <input type="date" id="invoice_date" name="invoice_date" value="{{ date('Y-m-d', strtotime(invoice.invoice_date)) }}">
                         </div>
+                        <div class="form-group">
+                            <label for="medical_record_id">Phiếu khám liên quan</label>
+                            <select id="medical_record_id" name="medical_record_id">
+                                <option value="">-- Không liên kết --</option>
+                                {% for record in medicalRecords %}
+                                    <option value="{{ record.medical_record_id }}" {{ ('selected' if record.medical_record_id == invoice.medical_record_id else '') }}>
+                                        #{{ record.medical_record_id }} - {{ record.customer_name or 'N/A' }} - {{ record.pet_name or 'N/A' }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
 
                     <h3>Chi tiết dịch vụ</h3>
@@ -61,13 +72,13 @@
                             </tr>
                         </thead>
                         <tbody id="serviceRows">
-                            {% if invoiceDetails %}
-                                {% for detail in invoiceDetails %}
+                            {% if details %}
+                                {% for detail in details %}
                                     <tr class="service-row">
                                         <td>
                                             <select name="service_ids[]" class="service-select" onchange="updatePrice(this)">
                                                 <option value="">-- Chọn dịch vụ --</option>
-                                                {% for service in serviceTypes %}
+                                                {% for service in services %}
                                                     <option value="{{ service.service_type_id }}" data-price="{{ service.price or 0 }}" {{ ('selected' if service.service_type_id == detail.service_type_id else '') }}>{{ service.service_name }}</option>
                                                 {% endfor %}
                                             </select>
@@ -83,7 +94,7 @@
                                     <td>
                                         <select name="service_ids[]" class="service-select" onchange="updatePrice(this)">
                                             <option value="">-- Chọn dịch vụ --</option>
-                                            {% for service in serviceTypes %}
+                                            {% for service in services %}
                                                 <option value="{{ service.service_type_id }}" data-price="{{ service.price or 0 }}">{{ service.service_name }}</option>
                                             {% endfor %}
                                         </select>
@@ -97,6 +108,78 @@
                         </tbody>
                     </table>
                     <button type="button" class="btn btn-add" onclick="addServiceRow()"><i class="fas fa-plus"></i> Thêm dịch vụ</button>
+
+                    <h3 class="mt-20">Chi tiết thuốc</h3>
+                    <table class="admin-data-table"><thead><tr><th>Thuốc</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th></th></tr></thead>
+                        <tbody id="medicineRows">
+                            {% if medicineDetails %}
+                                {% for detail in medicineDetails %}
+                                    <tr class="medicine-row">
+                                        <td><select name="medicine_ids[]" class="medicine-select" onchange="updateItemPrice(this, 'medicine')">
+                                            <option value="">-- Chọn thuốc --</option>
+                                            {% for medicine in medicines %}
+                                                <option value="{{ medicine.medicine_id }}" data-price="{{ medicine.unit_price or 0 }}" {{ ('selected' if medicine.medicine_id == detail.medicine_id else '') }}>{{ medicine.medicine_name }}</option>
+                                            {% endfor %}
+                                        </select></td>
+                                        <td><input type="number" name="medicine_quantities[]" class="medicine-quantity-input" value="{{ detail.quantity }}" min="1" onchange="calculateItemRow(this, 'medicine')"></td>
+                                        <td><input type="number" name="medicine_unit_prices[]" class="medicine-unit-price-input" value="{{ detail.unit_price }}" readonly></td>
+                                        <td><input type="number" name="medicine_total_prices[]" class="medicine-total-price-input" value="{{ detail.total_price }}" readonly></td>
+                                        <td><button type="button" class="btn btn-icon btn-delete" onclick="removeItemRow(this, 'medicine')"><i class="fas fa-times"></i></button></td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr class="medicine-row">
+                                    <td><select name="medicine_ids[]" class="medicine-select" onchange="updateItemPrice(this, 'medicine')">
+                                        <option value="">-- Chọn thuốc --</option>
+                                        {% for medicine in medicines %}
+                                            <option value="{{ medicine.medicine_id }}" data-price="{{ medicine.unit_price or 0 }}">{{ medicine.medicine_name }}</option>
+                                        {% endfor %}
+                                    </select></td>
+                                    <td><input type="number" name="medicine_quantities[]" class="medicine-quantity-input" value="1" min="1" onchange="calculateItemRow(this, 'medicine')"></td>
+                                    <td><input type="number" name="medicine_unit_prices[]" class="medicine-unit-price-input" value="0" readonly></td>
+                                    <td><input type="number" name="medicine_total_prices[]" class="medicine-total-price-input" value="0" readonly></td>
+                                    <td><button type="button" class="btn btn-icon btn-delete" onclick="removeItemRow(this, 'medicine')"><i class="fas fa-times"></i></button></td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-add" onclick="addItemRow('medicine')"><i class="fas fa-plus"></i> Thêm thuốc</button>
+
+                    <h3 class="mt-20">Chi tiết vaccine</h3>
+                    <table class="admin-data-table"><thead><tr><th>Vaccine</th><th>Số lượng</th><th>Đơn giá</th><th>Thành tiền</th><th></th></tr></thead>
+                        <tbody id="vaccineRows">
+                            {% if vaccinationDetails %}
+                                {% for detail in vaccinationDetails %}
+                                    <tr class="vaccine-row">
+                                        <td><select name="vaccine_ids[]" class="vaccine-select" onchange="updateItemPrice(this, 'vaccine')">
+                                            <option value="">-- Chọn vaccine --</option>
+                                            {% for vaccine in vaccines %}
+                                                <option value="{{ vaccine.vaccine_id }}" data-price="{{ vaccine.unit_price or 0 }}" {{ ('selected' if vaccine.vaccine_id == detail.vaccine_id else '') }}>{{ vaccine.vaccine_name }}</option>
+                                            {% endfor %}
+                                        </select></td>
+                                        <td><input type="number" name="vaccine_quantities[]" class="vaccine-quantity-input" value="{{ detail.quantity }}" min="1" onchange="calculateItemRow(this, 'vaccine')"></td>
+                                        <td><input type="number" name="vaccine_unit_prices[]" class="vaccine-unit-price-input" value="{{ detail.unit_price }}" readonly></td>
+                                        <td><input type="number" name="vaccine_total_prices[]" class="vaccine-total-price-input" value="{{ detail.total_price }}" readonly></td>
+                                        <td><button type="button" class="btn btn-icon btn-delete" onclick="removeItemRow(this, 'vaccine')"><i class="fas fa-times"></i></button></td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr class="vaccine-row">
+                                    <td><select name="vaccine_ids[]" class="vaccine-select" onchange="updateItemPrice(this, 'vaccine')">
+                                        <option value="">-- Chọn vaccine --</option>
+                                        {% for vaccine in vaccines %}
+                                            <option value="{{ vaccine.vaccine_id }}" data-price="{{ vaccine.unit_price or 0 }}">{{ vaccine.vaccine_name }}</option>
+                                        {% endfor %}
+                                    </select></td>
+                                    <td><input type="number" name="vaccine_quantities[]" class="vaccine-quantity-input" value="1" min="1" onchange="calculateItemRow(this, 'vaccine')"></td>
+                                    <td><input type="number" name="vaccine_unit_prices[]" class="vaccine-unit-price-input" value="0" readonly></td>
+                                    <td><input type="number" name="vaccine_total_prices[]" class="vaccine-total-price-input" value="0" readonly></td>
+                                    <td><button type="button" class="btn btn-icon btn-delete" onclick="removeItemRow(this, 'vaccine')"><i class="fas fa-times"></i></button></td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-add" onclick="addItemRow('vaccine')"><i class="fas fa-plus"></i> Thêm vaccine</button>
 
                     <div class="form-row mt-20">
                         <div class="form-group">
@@ -161,6 +244,12 @@
             document.querySelectorAll('.total-price-input').forEach(input => {
                 subtotal += parseFloat(input.value) || 0;
             });
+            document.querySelectorAll('.medicine-total-price-input').forEach(input => {
+                subtotal += parseFloat(input.value) || 0;
+            });
+            document.querySelectorAll('.vaccine-total-price-input').forEach(input => {
+                subtotal += parseFloat(input.value) || 0;
+            });
             
             const discount = parseFloat(document.getElementById('discount').value) || 0;
             const deposit = parseFloat(document.getElementById('deposit').value) || 0;
@@ -188,6 +277,41 @@
         function removeRow(button) {
             const tbody = document.getElementById('serviceRows');
             if (tbody.querySelectorAll('.service-row').length > 1) {
+                button.closest('tr').remove();
+                calculateTotal();
+            }
+        }
+
+        function updateItemPrice(select, type) {
+            const row = select.closest('tr');
+            const option = select.options[select.selectedIndex];
+            const price = option.dataset.price || 0;
+            row.querySelector(`.${type}-unit-price-input`).value = price;
+            calculateItemRow(select, type);
+        }
+
+        function calculateItemRow(input, type) {
+            const row = input.closest('tr');
+            const quantity = parseFloat(row.querySelector(`.${type}-quantity-input`).value) || 0;
+            const unitPrice = parseFloat(row.querySelector(`.${type}-unit-price-input`).value) || 0;
+            row.querySelector(`.${type}-total-price-input`).value = quantity * unitPrice;
+            calculateTotal();
+        }
+
+        function addItemRow(type) {
+            const tbody = document.getElementById(`${type}Rows`);
+            const firstRow = tbody.querySelector(`.${type}-row`);
+            const newRow = firstRow.cloneNode(true);
+            newRow.querySelector(`.${type}-select`).selectedIndex = 0;
+            newRow.querySelector(`.${type}-quantity-input`).value = 1;
+            newRow.querySelector(`.${type}-unit-price-input`).value = 0;
+            newRow.querySelector(`.${type}-total-price-input`).value = 0;
+            tbody.appendChild(newRow);
+        }
+
+        function removeItemRow(button, type) {
+            const tbody = document.getElementById(`${type}Rows`);
+            if (tbody.querySelectorAll(`.${type}-row`).length > 1) {
                 button.closest('tr').remove();
                 calculateTotal();
             }

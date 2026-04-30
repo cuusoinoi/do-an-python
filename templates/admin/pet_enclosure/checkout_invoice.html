@@ -66,7 +66,7 @@
                                     <select name="service_ids[]" class="service-select" required>
                                         <option value="">-- Chọn dịch vụ --</option>
                                         {% for st in serviceTypes %}
-                                            <option value="{{ st.service_type_id }}" {{ ('selected' if stripos(st.service_name, 'lưu chuồng') != false else '') }}>{{ st.service_name }}</option>
+                                            <option value="{{ st.service_type_id }}" data-price="{{ st.price or 0 }}" {% if boardingServiceId is not none and st.service_type_id == boardingServiceId %}selected{% endif %}>{{ st.service_name }}</option>
                                         {% endfor %}
                                     </select>
                                 </td>
@@ -82,7 +82,7 @@
                                     <select name="service_ids[]" class="service-select">
                                         <option value="">-- Phí quá giờ --</option>
                                         {% for st in serviceTypes %}
-                                            <option value="{{ st.service_type_id }}" {{ ('selected' if stripos(st.service_name, 'quá giờ') != false else '') }}>{{ st.service_name }}</option>
+                                            <option value="{{ st.service_type_id }}" data-price="{{ st.price or 0 }}">{{ st.service_name }}</option>
                                         {% endfor %}
                                     </select>
                                 </td>
@@ -94,7 +94,7 @@
                             {% endif %}
                         </tbody>
                     </table>
-                    <button type="button" id="addServiceBtn" class="btn btn-add" style="margin-bottom: 20px;"><i class="fas fa-plus"></i> Thêm dịch vụ</button>
+                    <button type="button" id="addServiceBtn" class="btn btn-add" style="margin-bottom: 20px;" onclick="addServiceRow()"><i class="fas fa-plus"></i> Thêm dịch vụ</button>
 
                     <!-- Tổng hợp -->
                     <div style="background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
@@ -130,8 +130,6 @@
 
     <script src="/static/assets/js/script.js" defer></script>
     <script>
-        const serviceTypes = {{ tojson(serviceTypes) }};
-
         // Calculate row total
         function calculateRowTotal(row) {
             const qty = parseInt(row.querySelector('.quantity-input').value) || 0;
@@ -153,11 +151,49 @@
             document.getElementById('total_amount').value = subtotal - deposit - discount;
         }
 
+        function updateRowPriceFromService(row) {
+            const select = row.querySelector('.service-select');
+            const unitPriceInput = row.querySelector('.unit-price-input');
+            if (!select || !unitPriceInput) return;
+            const selectedOption = select.options[select.selectedIndex];
+            if (!selectedOption || !selectedOption.value) return;
+            const price = parseInt(selectedOption.dataset.price || "0", 10) || 0;
+            unitPriceInput.value = price;
+            calculateRowTotal(row);
+        }
+
+        function attachRowHandlers(row) {
+            const quantityInput = row.querySelector('.quantity-input');
+            const unitPriceInput = row.querySelector('.unit-price-input');
+            const serviceSelect = row.querySelector('.service-select');
+            const removeBtn = row.querySelector('.remove-row');
+
+            if (quantityInput) {
+                quantityInput.addEventListener('input', function() {
+                    calculateRowTotal(row);
+                });
+            }
+            if (unitPriceInput) {
+                unitPriceInput.addEventListener('input', function() {
+                    calculateRowTotal(row);
+                });
+            }
+            if (serviceSelect) {
+                serviceSelect.addEventListener('change', function() {
+                    updateRowPriceFromService(row);
+                });
+            }
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    row.remove();
+                    calculateTotals();
+                });
+            }
+        }
+
         // Add event listeners
-        document.querySelectorAll('.quantity-input, .unit-price-input').forEach(input => {
-            input.addEventListener('input', function() {
-                calculateRowTotal(this.closest('tr'));
-            });
+        document.querySelectorAll('.service-row').forEach(row => {
+            attachRowHandlers(row);
         });
 
         document.getElementById('discount').addEventListener('input', calculateTotals);
@@ -171,37 +207,30 @@
         });
 
         // Add new service row
-        document.getElementById('addServiceBtn').addEventListener('click', function() {
+        window.addServiceRow = function () {
             const tbody = document.querySelector('#servicesTable tbody');
-            const options = serviceTypes.map(st => `<option value="${st.service_type_id}">${st.service_name}</option>`).join('');
-            const newRow = document.createElement('tr');
-            newRow.className = 'service-row';
-            newRow.innerHTML = `
-                <td>
-                    <select name="service_ids[]" class="service-select">
-                        <option value="">-- Chọn dịch vụ --</option>
-                        ${options}
-                    </select>
-                </td>
-                <td><input type="number" name="quantities[]" value="1" min="1" class="quantity-input"></td>
-                <td><input type="number" name="unit_prices[]" value="0" class="unit-price-input"></td>
-                <td><input type="number" name="total_prices[]" value="0" class="total-price-input" readonly></td>
-                <td><button type="button" class="btn btn-icon btn-delete remove-row"><i class="fas fa-times"></i></button></td>
-            `;
+            const seedRow = tbody.querySelector('.service-row');
+            if (!seedRow) return;
+            const newRow = seedRow.cloneNode(true);
+            const select = newRow.querySelector('.service-select');
+            const qtyInput = newRow.querySelector('.quantity-input');
+            const priceInput = newRow.querySelector('.unit-price-input');
+            const totalInput = newRow.querySelector('.total-price-input');
+            const actionCell = newRow.querySelector('td:last-child');
+
+            if (select) select.selectedIndex = 0;
+            if (qtyInput) qtyInput.value = 1;
+            if (priceInput) priceInput.value = 0;
+            if (totalInput) totalInput.value = 0;
+            if (actionCell) {
+                actionCell.innerHTML = '<button type="button" class="btn btn-icon btn-delete remove-row"><i class="fas fa-times"></i></button>';
+            }
+
             tbody.appendChild(newRow);
 
-            // Add event listeners to new inputs
-            newRow.querySelector('.quantity-input').addEventListener('input', function() {
-                calculateRowTotal(newRow);
-            });
-            newRow.querySelector('.unit-price-input').addEventListener('input', function() {
-                calculateRowTotal(newRow);
-            });
-            newRow.querySelector('.remove-row').addEventListener('click', function() {
-                newRow.remove();
-                calculateTotals();
-            });
-        });
+            attachRowHandlers(newRow);
+            calculateTotals();
+        };
     </script>
 </body>
 </html>

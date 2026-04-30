@@ -94,7 +94,7 @@
                 </div>
                 <div class="info-row">
                     <span class="info-label">Ngày trả (dự kiến):</span>
-                    <span>{{ enclosure.check_out_date or '-' }}</span>
+                    <span>{{ (date('d/m/Y H:i', strtotime(enclosure.check_out_date)) if enclosure.check_out_date else '-') }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Giá ngày:</span>
@@ -117,6 +117,13 @@
             <p>{{ enclosure.pet_enclosure_note }}</p>
         </div>
         {% endif %}
+        <div class="section">
+            <div class="section-title">Cam kết chăm sóc</div>
+            <p>
+                Chúng tôi cam kết chăm sóc thú cưng theo đúng yêu cầu đã thống nhất, cập nhật tình trạng khi có phát sinh
+                và chỉ thực hiện can thiệp y tế trong phạm vi cho phép của chủ nuôi.
+            </p>
+        </div>
 
         <div class="total-box">
             <p>TỔNG TIỀN THANH TOÁN</p>

@@ -1,5 +1,16 @@
-import hashlib
+import bcrypt
 
 
-def md5_hash(raw: str) -> str:
-    return hashlib.md5(raw.encode("utf-8")).hexdigest()
+def hash_password(raw: str) -> str:
+    return bcrypt.hashpw(raw.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(raw: str, hashed: str | None) -> bool:
+    if not hashed:
+        return False
+    if not hashed.startswith(("$2a$", "$2b$", "$2y$")):
+        return False
+    try:
+        return bcrypt.checkpw(raw.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False

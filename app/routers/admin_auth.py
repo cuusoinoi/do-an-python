@@ -4,7 +4,7 @@ from app.templating import Jinja2Templates
 from datetime import date, datetime, timedelta
 
 from app.db import fetch_all, fetch_one
-from app.security import md5_hash
+from app.security import verify_password
 from app.session import pop_flash, set_flash
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
@@ -31,7 +31,7 @@ def admin_login(request: Request, username: str = Form(""), password: str = Form
         set_flash(request, error="Vui long nhap day du thong tin")
         return RedirectResponse(url="/admin", status_code=302)
     user = fetch_one("SELECT * FROM users WHERE username = :username LIMIT 1", {"username": username})
-    if not user or user["password"] != md5_hash(password):
+    if not user or not verify_password(password, user.get("password")):
         set_flash(request, error="Sai ten dang nhap hoac mat khau")
         return RedirectResponse(url="/admin", status_code=302)
     request.session["user_id"] = user["id"]

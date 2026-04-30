@@ -44,6 +44,12 @@ document.querySelectorAll(".sidebar__item--has-submenu").forEach((item) => {
         link.addEventListener("click", (e) => {
             e.stopPropagation();
             const collapsed = sidebar.classList.contains("sidebar--collapsed");
+            const desktopExpanded = !isMobileTablet() && !collapsed;
+
+            // Desktop expanded uses hover to open submenu.
+            if (desktopExpanded) {
+                return;
+            }
 
             if (isMobileTablet()) {
                 // Accordion behavior on mobile
@@ -53,14 +59,9 @@ document.querySelectorAll(".sidebar__item--has-submenu").forEach((item) => {
                     closeAllSubmenus(item);
                     item.classList.add("sidebar__item--open");
                 }
-            } else if (!collapsed) {
-                // Normal accordion desktop (only when expanded)
-                if (item.classList.contains("sidebar__item--open")) {
-                    item.classList.remove("sidebar__item--open");
-                } else {
-                    closeAllSubmenus(item);
-                    item.classList.add("sidebar__item--open");
-                }
+            } else if (collapsed) {
+                // Keep existing collapsed behavior (popup on hover).
+                return;
             }
             // When collapsed, hover handles the popup - click does nothing
         });

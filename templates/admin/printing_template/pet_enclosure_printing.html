@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/png" href="/static/admin_assets/images/logo.png">
+    <link rel="stylesheet" href="/static/assets/css/base.css">
+    <link rel="stylesheet" href="/static/assets/css/main.css">
+    <link rel="stylesheet" href="/static/assets/css/grid.css">
+    <link rel="stylesheet" href="/static/assets/css/responsive.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        @media print {
+            .sidebar, .header, .no-print, .actions { display: none !important; }
+            .main { margin: 0; padding: 0; }
+            .content { padding: 0; }
+            .preview-box { border: none; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    {% include 'layouts/admin_sidebar.html' %}
+    <main class="main">
+        {% include 'layouts/admin_header.html' %}
+        <main class="content">
+            <h1 class="no-print">Mẫu in lưu chuồng</h1>
+
+            <div class="filter-box no-print">
+                <select id="printEnclosureSelect">
+                    {% for item in enclosures %}
+                        <option value="{{ item.pet_enclosure_id }}">
+                            #{{ item.pet_enclosure_id }} - {{ item.pet_name or 'N/A' }} ({{ item.customer_name or 'N/A' }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="actions action-buttons no-print">
+                <button class="btn-action btn-commit" id="btnRenderCommit"><i class="fas fa-file-contract"></i> Xem Giấy cam kết</button>
+                <button class="btn-action btn-invoice" id="btnRenderInvoice"><i class="fas fa-file-invoice"></i> Xem Hóa đơn</button>
+                <button class="btn-action btn-print" id="btnPrintNow"><i class="fas fa-print"></i> In Trang này</button>
+            </div>
+
+            <div id="printArea" class="preview-box" style="display:none; margin-top: 20px; padding: 20px; border: 1px solid #ddd; background: #fff;"></div>
+        </main>
+        {% include 'layouts/admin_footer.html' %}
+    </main>
+
+    <script src="/static/assets/js/script.js" defer></script>
+    <script>
+        const printArea = document.getElementById('printArea');
+        const select = document.getElementById('printEnclosureSelect');
+
+        function renderFromEndpoint(endpoint) {
+            if (!select.value) return;
+            fetch(endpoint + select.value)
+                .then(res => res.text())
+                .then(html => {
+                    printArea.style.display = 'block';
+                    printArea.innerHTML = html;
+                    printArea.scrollIntoView({ behavior: 'smooth' });
+                });
+        }
+
+        document.getElementById('btnRenderCommit').addEventListener('click', function() {
+            renderFromEndpoint('/admin/printing-template/pet-enclosure/load-commit/');
+        });
+
+        document.getElementById('btnRenderInvoice').addEventListener('click', function() {
+            renderFromEndpoint('/admin/printing-template/pet-enclosure/load-invoice/');
+        });
+
+        document.getElementById('btnPrintNow').addEventListener('click', function() {
+            if (!printArea.innerHTML.trim()) return;
+            window.print();
+        });
+    </script>
+</body>
+</html>

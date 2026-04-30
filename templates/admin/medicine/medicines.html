@@ -33,6 +33,7 @@
                             <th>ID</th>
                             <th>Tên thuốc</th>
                             <th>Đường dùng</th>
+                            <th>Đơn giá</th>
                             <th>Hành động</th>
                         </tr>
                     </thead>
@@ -43,6 +44,7 @@
                                     <td>{{ row.medicine_id }}</td>
                                     <td>{{ row.medicine_name }}</td>
                                     <td>{{ row.medicine_route }}</td>
+                                    <td>{{ number_format(row.unit_price or 0, 0, ',', '.') }} đ</td>
                                     <td>
                                         <div class="actions">
                                             <a href="{{ site_url('admin/medicines/edit/' ~ row.medicine_id) }}" class="btn btn-icon btn-edit" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
@@ -52,7 +54,7 @@
                                 </tr>
                             {% endfor %}
                         {% else %}
-                            <tr><td colspan="4">Chưa có thuốc nào.</td></tr>
+                            <tr><td colspan="5">Chưa có thuốc nào.</td></tr>
                         {% endif %}
                     </tbody>
                 </table>

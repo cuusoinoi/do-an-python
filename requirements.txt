@@ -7,3 +7,4 @@ pydantic-settings
 sqlalchemy
 pymysql
 httpx
+bcrypt

@@ -26,7 +26,10 @@
             {% endif %}
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Tìm theo khách hàng, thú cưng...">
-                <a href="/admin/invoices/add" class="btn btn-add"><i class="fas fa-plus"></i> Tạo hóa đơn</a>
+                <div style="display:flex; gap:8px;">
+                    <a href="/admin/invoices/add" class="btn btn-add"><i class="fas fa-plus"></i> Tạo hóa đơn</a>
+                    <a href="/admin/medical-records" class="btn btn-add"><i class="fas fa-file-medical"></i> Xuất từ lượt khám</a>
+                </div>
             </div>
             <div class="table-responsive">
                 <table class="admin-data-table" id="dataTable">

@@ -52,7 +52,7 @@ This checklist tracks route-level parity between the original and current implem
 - [x] `prescription` (view/add/delete)
 - [x] `settings` (view/update)
 - [x] `print` (invoice/medical-record/treatment-session/pet-enclosure)
-- [x] `printing-template` (index/load-commit/load-invoice)
+- [x] `printing-template` (index redirect + pet-enclosure/load-commit/load-invoice)
 
 ## Final parity pass
 

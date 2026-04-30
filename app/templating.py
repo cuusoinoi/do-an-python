@@ -148,6 +148,13 @@ class Jinja2Templates(_Jinja2Templates):
                 if "rows" in context:
                     rows = context["rows"]
                     for alias in (
+                        "records",
+                        "vaccinations",
+                        "prescriptions",
+                        "courses",
+                        "sessions",
+                        "details",
+                        "enclosures",
                         "users",
                         "vaccines",
                         "medicines",
@@ -164,6 +171,8 @@ class Jinja2Templates(_Jinja2Templates):
                         "invoices",
                     ):
                         context.setdefault(alias, rows)
+                if "details" in context:
+                    context.setdefault("invoiceDetails", context["details"])
                 if "row" in context:
                     row = context["row"]
                     for alias in (

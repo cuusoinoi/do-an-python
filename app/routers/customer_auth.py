@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from app.templating import Jinja2Templates
-from datetime import datetime
 
 from app.db import execute, fetch_one
-from app.security import md5_hash
+from app.security import hash_password
 from app.session import pop_flash, set_flash
+from app.user_time_compat import insert_user_with_time_compat
 
 router = APIRouter(prefix="/customer", tags=["customer-auth"])
 templates = Jinja2Templates(directory="templates")
@@ -38,23 +38,12 @@ def login(request: Request, phone: str = Form(""), otp: str = Form("")):
 
     user = fetch_one("SELECT * FROM users WHERE username = :username LIMIT 1", {"username": phone})
     if not user:
-        now = datetime.now()
-        try:
-            execute(
-                """
-                INSERT INTO users (username, password, fullname, role, created_at)
-                VALUES (:username, :password, :fullname, 'customer', :created_at)
-                """,
-                {"username": phone, "password": md5_hash(DEFAULT_OTP), "fullname": customer["customer_name"], "created_at": now},
-            )
-        except Exception:
-            execute(
-                """
-                INSERT INTO users (username, password, fullname, role, create_at)
-                VALUES (:username, :password, :fullname, 'customer', :create_at)
-                """,
-                {"username": phone, "password": md5_hash(DEFAULT_OTP), "fullname": customer["customer_name"], "create_at": now},
-            )
+        insert_user_with_time_compat(
+            username=phone,
+            password=hash_password(DEFAULT_OTP),
+            fullname=customer["customer_name"],
+            role="customer",
+        )
         user = fetch_one("SELECT * FROM users WHERE username = :username LIMIT 1", {"username": phone})
     elif user["role"] != "customer":
         execute("UPDATE users SET role='customer' WHERE id=:id", {"id": user["id"]})
@@ -114,23 +103,7 @@ def register(
         "SELECT * FROM customers WHERE customer_phone_number=:phone ORDER BY customer_id DESC LIMIT 1",
         {"phone": phone},
     )
-    now = datetime.now()
-    try:
-        execute(
-            """
-            INSERT INTO users (username, password, fullname, role, created_at)
-            VALUES (:username, :password, :fullname, 'customer', :created_at)
-            """,
-            {"username": phone, "password": md5_hash(DEFAULT_OTP), "fullname": name, "created_at": now},
-        )
-    except Exception:
-        execute(
-            """
-            INSERT INTO users (username, password, fullname, role, create_at)
-            VALUES (:username, :password, :fullname, 'customer', :create_at)
-            """,
-            {"username": phone, "password": md5_hash(DEFAULT_OTP), "fullname": name, "create_at": now},
-        )
+    insert_user_with_time_compat(username=phone, password=hash_password(DEFAULT_OTP), fullname=name, role="customer")
     user = fetch_one("SELECT * FROM users WHERE username = :username LIMIT 1", {"username": phone})
 
     request.session["user_id"] = user["id"]

@@ -6,8 +6,17 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from app.templating import Jinja2Templates
 
 from app.db import execute, fetch_all, fetch_one
-from app.security import md5_hash
+from app.record_detail_queries import (
+    load_invoice_medicines,
+    load_invoice_vaccinations,
+    load_record_medicines,
+    load_record_services,
+    save_record_medicines,
+    save_record_services,
+)
+from app.security import hash_password, verify_password
 from app.session import pop_flash, set_flash
+from app.user_time_compat import insert_user_with_time_compat
 
 router = APIRouter(prefix="/admin", tags=["admin-core"])
 templates = Jinja2Templates(directory="templates")
@@ -20,10 +29,30 @@ def _guard_staff(request: Request):
     return None
 
 
+def _guard_admin(request: Request):
+    if request.session.get("role") != "admin":
+        set_flash(request, error="Ban khong co quyen truy cap")
+        return RedirectResponse(url="/admin/dashboard", status_code=302)
+    return None
+
+
 def _pager(total: int, page: int, limit: int):
     total_pages = max(1, ceil(total / limit)) if total else 1
     page = max(1, min(page, total_pages))
     return page, (page - 1) * limit, total_pages
+
+
+def _normalize_medical_record_type(value: str) -> str:
+    text = (value or "").strip()
+    mapping = {
+        "Khám bệnh": "Khám",
+        "Tái khám": "Điều trị",
+        "Khác": "Điều trị",
+    }
+    normalized = mapping.get(text, text)
+    if normalized not in {"Khám", "Điều trị", "Vaccine"}:
+        return "Khám"
+    return normalized
 
 
 @router.get("/customers", response_class=HTMLResponse)
@@ -567,11 +596,14 @@ def medicine_add_page(request: Request):
 
 
 @router.post("/medicines/store")
-def medicine_store(request: Request, name: str = Form(""), route: str = Form("PO")):
+def medicine_store(request: Request, name: str = Form(""), route: str = Form("PO"), unit_price: int = Form(0)):
     guard = _guard_staff(request)
     if guard:
         return guard
-    execute("INSERT INTO medicines (medicine_name, medicine_route) VALUES (:name, :route)", {"name": name, "route": route})
+    execute(
+        "INSERT INTO medicines (medicine_name, medicine_route, unit_price) VALUES (:name, :route, :unit_price)",
+        {"name": name, "route": route, "unit_price": unit_price or 0},
+    )
     set_flash(request, success="Them thuoc thanh cong")
     return RedirectResponse(url="/admin/medicines", status_code=302)
 
@@ -586,11 +618,14 @@ def medicine_edit_page(request: Request, medicine_id: int):
 
 
 @router.post("/medicines/update/{medicine_id}")
-def medicine_update(request: Request, medicine_id: int, name: str = Form(""), route: str = Form("PO")):
+def medicine_update(request: Request, medicine_id: int, name: str = Form(""), route: str = Form("PO"), unit_price: int = Form(0)):
     guard = _guard_staff(request)
     if guard:
         return guard
-    execute("UPDATE medicines SET medicine_name=:name, medicine_route=:route WHERE medicine_id=:id", {"name": name, "route": route, "id": medicine_id})
+    execute(
+        "UPDATE medicines SET medicine_name=:name, medicine_route=:route, unit_price=:unit_price WHERE medicine_id=:id",
+        {"name": name, "route": route, "unit_price": unit_price or 0, "id": medicine_id},
+    )
     set_flash(request, success="Cap nhat thuoc thanh cong")
     return RedirectResponse(url="/admin/medicines", status_code=302)
 
@@ -631,11 +666,14 @@ def vaccine_add_page(request: Request):
 
 
 @router.post("/vaccines/store")
-def vaccine_store(request: Request, name: str = Form(""), description: str = Form("")):
+def vaccine_store(request: Request, name: str = Form(""), description: str = Form(""), unit_price: int = Form(0)):
     guard = _guard_staff(request)
     if guard:
         return guard
-    execute("INSERT INTO vaccines (vaccine_name, description) VALUES (:name, :description)", {"name": name, "description": description or None})
+    execute(
+        "INSERT INTO vaccines (vaccine_name, description, unit_price) VALUES (:name, :description, :unit_price)",
+        {"name": name, "description": description or None, "unit_price": unit_price or 0},
+    )
     set_flash(request, success="Them vaccine thanh cong")
     return RedirectResponse(url="/admin/vaccines", status_code=302)
 
@@ -650,11 +688,14 @@ def vaccine_edit_page(request: Request, vaccine_id: int):
 
 
 @router.post("/vaccines/update/{vaccine_id}")
-def vaccine_update(request: Request, vaccine_id: int, name: str = Form(""), description: str = Form("")):
+def vaccine_update(request: Request, vaccine_id: int, name: str = Form(""), description: str = Form(""), unit_price: int = Form(0)):
     guard = _guard_staff(request)
     if guard:
         return guard
-    execute("UPDATE vaccines SET vaccine_name=:name, description=:description WHERE vaccine_id=:id", {"name": name, "description": description or None, "id": vaccine_id})
+    execute(
+        "UPDATE vaccines SET vaccine_name=:name, description=:description, unit_price=:unit_price WHERE vaccine_id=:id",
+        {"name": name, "description": description or None, "unit_price": unit_price or 0, "id": vaccine_id},
+    )
     set_flash(request, success="Cap nhat vaccine thanh cong")
     return RedirectResponse(url="/admin/vaccines", status_code=302)
 
@@ -671,7 +712,7 @@ def vaccine_delete(request: Request, vaccine_id: int):
 
 @router.get("/users", response_class=HTMLResponse)
 def users_page(request: Request, page: int = Query(1), q: str = Query("")):
-    guard = _guard_staff(request)
+    guard = _guard_admin(request)
     if guard:
         return guard
     where = ""
@@ -688,7 +729,7 @@ def users_page(request: Request, page: int = Query(1), q: str = Query("")):
 
 @router.get("/users/add", response_class=HTMLResponse)
 def user_add_page(request: Request):
-    guard = _guard_staff(request)
+    guard = _guard_admin(request)
     if guard:
         return guard
     return templates.TemplateResponse("admin/user/add_user.html", {"request": request, "title": "Them nguoi dung", "flash": pop_flash(request), "row": None, "action": "add"})
@@ -696,27 +737,17 @@ def user_add_page(request: Request):
 
 @router.post("/users/store")
 def user_store(request: Request, username: str = Form(""), password: str = Form(""), fullname: str = Form(""), role: str = Form("staff")):
-    guard = _guard_staff(request)
+    guard = _guard_admin(request)
     if guard:
         return guard
-    now = datetime.now()
-    try:
-        execute(
-            "INSERT INTO users (username, password, fullname, role, created_at) VALUES (:username, :password, :fullname, :role, :created_at)",
-            {"username": username, "password": md5_hash(password), "fullname": fullname, "role": role, "created_at": now},
-        )
-    except Exception:
-        execute(
-            "INSERT INTO users (username, password, fullname, role, create_at) VALUES (:username, :password, :fullname, :role, :create_at)",
-            {"username": username, "password": md5_hash(password), "fullname": fullname, "role": role, "create_at": now},
-        )
+    insert_user_with_time_compat(username=username, password=hash_password(password), fullname=fullname, role=role)
     set_flash(request, success="Them nguoi dung thanh cong")
     return RedirectResponse(url="/admin/users", status_code=302)
 
 
 @router.get("/users/edit/{user_id}", response_class=HTMLResponse)
 def user_edit_page(request: Request, user_id: int):
-    guard = _guard_staff(request)
+    guard = _guard_admin(request)
     if guard:
         return guard
     row = fetch_one("SELECT * FROM users WHERE id=:id", {"id": user_id})
@@ -725,7 +756,7 @@ def user_edit_page(request: Request, user_id: int):
 
 @router.post("/users/update/{user_id}")
 def user_update(request: Request, user_id: int, username: str = Form(""), fullname: str = Form(""), role: str = Form("staff")):
-    guard = _guard_staff(request)
+    guard = _guard_admin(request)
     if guard:
         return guard
     execute("UPDATE users SET username=:username, fullname=:fullname, role=:role WHERE id=:id", {"username": username, "fullname": fullname, "role": role, "id": user_id})
@@ -735,7 +766,7 @@ def user_update(request: Request, user_id: int, username: str = Form(""), fullna
 
 @router.get("/users/delete/{user_id}")
 def user_delete(request: Request, user_id: int):
-    guard = _guard_staff(request)
+    guard = _guard_admin(request)
     if guard:
         return guard
     row = fetch_one("SELECT username FROM users WHERE id=:id", {"id": user_id})
@@ -761,13 +792,13 @@ def update_password(request: Request, old_password: str = Form(""), new_password
     if guard:
         return guard
     current = fetch_one("SELECT * FROM users WHERE username=:username", {"username": request.session.get("username")})
-    if not current or md5_hash(old_password) != current["password"]:
+    if not current or not verify_password(old_password, current.get("password")):
         set_flash(request, error="Mat khau cu khong dung")
         return RedirectResponse(url="/admin/users/change-password", status_code=302)
     if new_password != confirm_password:
         set_flash(request, error="Mat khau moi va xac nhan khong khop")
         return RedirectResponse(url="/admin/users/change-password", status_code=302)
-    execute("UPDATE users SET password=:password WHERE id=:id", {"password": md5_hash(new_password), "id": current["id"]})
+    execute("UPDATE users SET password=:password WHERE id=:id", {"password": hash_password(new_password), "id": current["id"]})
     set_flash(request, success="Doi mat khau thanh cong")
     return RedirectResponse(url="/admin/users/change-password", status_code=302)
 
@@ -781,7 +812,9 @@ def medical_records_page(request: Request, page: int = Query(1)):
     page, offset, total_pages = _pager(total, page, 10)
     rows = fetch_all(
         """
-        SELECT mr.*, c.customer_name, p.pet_name, d.doctor_name
+        SELECT mr.*, c.customer_name, p.pet_name, d.doctor_name,
+               (SELECT COUNT(*) FROM medical_record_services mrs WHERE mrs.medical_record_id = mr.medical_record_id) AS total_services,
+               (SELECT COUNT(*) FROM medical_record_medicines mrm WHERE mrm.medical_record_id = mr.medical_record_id) AS total_medicines
         FROM medical_records mr
         LEFT JOIN customers c ON c.customer_id = mr.customer_id
         LEFT JOIN pets p ON p.pet_id = mr.pet_id
@@ -799,10 +832,31 @@ def medical_record_add_page(request: Request):
     guard = _guard_staff(request)
     if guard:
         return guard
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name, pet_species FROM pets ORDER BY pet_name ASC")
     doctors = fetch_all("SELECT doctor_id, doctor_name FROM doctors ORDER BY doctor_name ASC")
-    return templates.TemplateResponse("admin/medical_record/add_medical_record.html", {"request": request, "title": "Them phieu kham", "flash": pop_flash(request), "row": None, "vaccination": None, "action": "add", "customers": customers, "pets": pets, "doctors": doctors})
+    services = fetch_all("SELECT service_type_id, service_name, price FROM service_types ORDER BY service_name ASC")
+    medicines = fetch_all("SELECT medicine_id, medicine_name, unit_price FROM medicines ORDER BY medicine_name ASC")
+    vaccines = fetch_all("SELECT vaccine_id, vaccine_name, unit_price FROM vaccines ORDER BY vaccine_name ASC")
+    return templates.TemplateResponse(
+        "admin/medical_record/add_medical_record.html",
+        {
+            "request": request,
+            "title": "Them phieu kham",
+            "flash": pop_flash(request),
+            "row": None,
+            "vaccination": None,
+            "action": "add",
+            "customers": customers,
+            "pets": pets,
+            "doctors": doctors,
+            "services": services,
+            "medicines": medicines,
+            "vaccines": vaccines,
+            "recordServices": [],
+            "recordMedicines": [],
+        },
+    )
 
 
 @router.post("/medical-records/store")
@@ -818,19 +872,28 @@ def medical_record_store(
     vaccine_name: str = Form(""),
     batch_number: str = Form(""),
     next_injection_date: str = Form(""),
+    service_ids: list[str] = Form(default=[], alias="service_ids[]"),
+    service_quantities: list[str] = Form(default=[], alias="service_quantities[]"),
+    service_unit_prices: list[str] = Form(default=[], alias="service_unit_prices[]"),
+    service_total_prices: list[str] = Form(default=[], alias="service_total_prices[]"),
+    medicine_ids: list[str] = Form(default=[], alias="medicine_ids[]"),
+    medicine_quantities: list[str] = Form(default=[], alias="medicine_quantities[]"),
+    medicine_unit_prices: list[str] = Form(default=[], alias="medicine_unit_prices[]"),
+    medicine_total_prices: list[str] = Form(default=[], alias="medicine_total_prices[]"),
 ):
     guard = _guard_staff(request)
     if guard:
         return guard
+    normalized_type = _normalize_medical_record_type(type)
     execute(
         """
         INSERT INTO medical_records (customer_id, pet_id, doctor_id, medical_record_type, medical_record_visit_date, medical_record_summary, medical_record_details)
         VALUES (:customer_id, :pet_id, :doctor_id, :type, :visit_date, :summary, :details)
         """,
-        {"customer_id": customer_id, "pet_id": pet_id, "doctor_id": doctor_id, "type": type, "visit_date": visit_date, "summary": summary or None, "details": details or None},
+        {"customer_id": customer_id, "pet_id": pet_id, "doctor_id": doctor_id, "type": normalized_type, "visit_date": visit_date, "summary": summary or None, "details": details or None},
     )
     record = fetch_one("SELECT medical_record_id FROM medical_records ORDER BY medical_record_id DESC LIMIT 1")
-    if type == "Vaccine" and vaccine_name:
+    if normalized_type == "Vaccine" and vaccine_name:
         execute(
             """
             INSERT INTO vaccination_records (medical_record_id, vaccine_name, batch_number, next_injection_date)
@@ -838,6 +901,8 @@ def medical_record_store(
             """,
             {"medical_record_id": record["medical_record_id"], "vaccine_name": vaccine_name, "batch_number": batch_number or None, "next_injection_date": next_injection_date or None},
         )
+    save_record_services(record["medical_record_id"], service_ids, service_quantities, service_unit_prices, service_total_prices)
+    save_record_medicines(record["medical_record_id"], medicine_ids, medicine_quantities, medicine_unit_prices, medicine_total_prices)
     set_flash(request, success="Them phieu kham thanh cong")
     return RedirectResponse(url="/admin/medical-records", status_code=302)
 
@@ -849,10 +914,31 @@ def medical_record_edit_page(request: Request, record_id: int):
         return guard
     row = fetch_one("SELECT * FROM medical_records WHERE medical_record_id=:id", {"id": record_id})
     vaccination = fetch_one("SELECT * FROM vaccination_records WHERE medical_record_id=:id", {"id": record_id})
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name, pet_species FROM pets ORDER BY pet_name ASC")
     doctors = fetch_all("SELECT doctor_id, doctor_name FROM doctors ORDER BY doctor_name ASC")
-    return templates.TemplateResponse("admin/medical_record/edit_medical_record.html", {"request": request, "title": "Chinh sua phieu kham", "flash": pop_flash(request), "row": row, "vaccination": vaccination, "action": "edit", "customers": customers, "pets": pets, "doctors": doctors})
+    services = fetch_all("SELECT service_type_id, service_name, price FROM service_types ORDER BY service_name ASC")
+    medicines = fetch_all("SELECT medicine_id, medicine_name, unit_price FROM medicines ORDER BY medicine_name ASC")
+    vaccines = fetch_all("SELECT vaccine_id, vaccine_name, unit_price FROM vaccines ORDER BY vaccine_name ASC")
+    return templates.TemplateResponse(
+        "admin/medical_record/edit_medical_record.html",
+        {
+            "request": request,
+            "title": "Chinh sua phieu kham",
+            "flash": pop_flash(request),
+            "row": row,
+            "vaccination": vaccination,
+            "action": "edit",
+            "customers": customers,
+            "pets": pets,
+            "doctors": doctors,
+            "services": services,
+            "medicines": medicines,
+            "vaccines": vaccines,
+            "recordServices": load_record_services(record_id),
+            "recordMedicines": load_record_medicines(record_id),
+        },
+    )
 
 
 @router.post("/medical-records/update/{record_id}")
@@ -869,10 +955,19 @@ def medical_record_update(
     vaccine_name: str = Form(""),
     batch_number: str = Form(""),
     next_injection_date: str = Form(""),
+    service_ids: list[str] = Form(default=[], alias="service_ids[]"),
+    service_quantities: list[str] = Form(default=[], alias="service_quantities[]"),
+    service_unit_prices: list[str] = Form(default=[], alias="service_unit_prices[]"),
+    service_total_prices: list[str] = Form(default=[], alias="service_total_prices[]"),
+    medicine_ids: list[str] = Form(default=[], alias="medicine_ids[]"),
+    medicine_quantities: list[str] = Form(default=[], alias="medicine_quantities[]"),
+    medicine_unit_prices: list[str] = Form(default=[], alias="medicine_unit_prices[]"),
+    medicine_total_prices: list[str] = Form(default=[], alias="medicine_total_prices[]"),
 ):
     guard = _guard_staff(request)
     if guard:
         return guard
+    normalized_type = _normalize_medical_record_type(type)
     old = fetch_one("SELECT medical_record_type FROM medical_records WHERE medical_record_id=:id", {"id": record_id})
     execute(
         """
@@ -881,10 +976,10 @@ def medical_record_update(
             medical_record_visit_date=:visit_date, medical_record_summary=:summary, medical_record_details=:details
         WHERE medical_record_id=:id
         """,
-        {"customer_id": customer_id, "pet_id": pet_id, "doctor_id": doctor_id, "type": type, "visit_date": visit_date, "summary": summary or None, "details": details or None, "id": record_id},
+        {"customer_id": customer_id, "pet_id": pet_id, "doctor_id": doctor_id, "type": normalized_type, "visit_date": visit_date, "summary": summary or None, "details": details or None, "id": record_id},
     )
     existing = fetch_one("SELECT medical_record_id FROM vaccination_records WHERE medical_record_id=:id", {"id": record_id})
-    if type == "Vaccine":
+    if normalized_type == "Vaccine":
         if existing:
             execute(
                 """
@@ -901,6 +996,8 @@ def medical_record_update(
             )
     elif old and old["medical_record_type"] == "Vaccine":
         execute("DELETE FROM vaccination_records WHERE medical_record_id=:id", {"id": record_id})
+    save_record_services(record_id, service_ids, service_quantities, service_unit_prices, service_total_prices)
+    save_record_medicines(record_id, medicine_ids, medicine_quantities, medicine_unit_prices, medicine_total_prices)
     set_flash(request, success="Cap nhat phieu kham thanh cong")
     return RedirectResponse(url="/admin/medical-records", status_code=302)
 
@@ -910,6 +1007,8 @@ def medical_record_delete(request: Request, record_id: int):
     guard = _guard_staff(request)
     if guard:
         return guard
+    execute("DELETE FROM medical_record_services WHERE medical_record_id=:id", {"id": record_id})
+    execute("DELETE FROM medical_record_medicines WHERE medical_record_id=:id", {"id": record_id})
     execute("DELETE FROM vaccination_records WHERE medical_record_id=:id", {"id": record_id})
     execute("DELETE FROM medical_records WHERE medical_record_id=:id", {"id": record_id})
     set_flash(request, success="Xoa phieu kham thanh cong")
@@ -942,10 +1041,115 @@ def invoice_add_page(request: Request):
     guard = _guard_staff(request)
     if guard:
         return guard
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name FROM pets ORDER BY pet_name ASC")
     services = fetch_all("SELECT service_type_id, service_name, price FROM service_types ORDER BY service_name ASC")
-    return templates.TemplateResponse("admin/invoice/add_invoice.html", {"request": request, "title": "Them hoa don", "flash": pop_flash(request), "row": None, "details": [], "action": "add", "customers": customers, "pets": pets, "services": services})
+    medicines = fetch_all("SELECT medicine_id, medicine_name, unit_price FROM medicines ORDER BY medicine_name ASC")
+    vaccines = fetch_all("SELECT vaccine_id, vaccine_name, unit_price FROM vaccines ORDER BY vaccine_name ASC")
+    records = fetch_all(
+        """
+        SELECT mr.medical_record_id, mr.customer_id, mr.pet_id, mr.medical_record_visit_date, c.customer_name, p.pet_name
+        FROM medical_records mr
+        LEFT JOIN customers c ON c.customer_id = mr.customer_id
+        LEFT JOIN pets p ON p.pet_id = mr.pet_id
+        ORDER BY mr.medical_record_id DESC
+        """
+    )
+    return templates.TemplateResponse(
+        "admin/invoice/add_invoice.html",
+        {
+            "request": request,
+            "title": "Them hoa don",
+            "flash": pop_flash(request),
+            "row": None,
+            "details": [],
+            "medicineDetails": [],
+            "vaccinationDetails": [],
+            "action": "add",
+            "customers": customers,
+            "pets": pets,
+            "services": services,
+            "serviceTypes": services,
+            "medicines": medicines,
+            "vaccines": vaccines,
+            "medicalRecords": records,
+        },
+    )
+
+
+@router.get("/invoices/add-from-visit/{record_id}")
+def invoice_add_from_visit(request: Request, record_id: int):
+    guard = _guard_staff(request)
+    if guard:
+        return guard
+    record = fetch_one("SELECT * FROM medical_records WHERE medical_record_id=:id", {"id": record_id})
+    if not record:
+        set_flash(request, error="Khong tim thay phieu kham")
+        return RedirectResponse(url="/admin/invoices", status_code=302)
+    service_rows = fetch_all(
+        """
+        SELECT service_type_id, quantity, unit_price, total_price
+        FROM medical_record_services
+        WHERE medical_record_id=:id
+        ORDER BY record_service_id ASC
+        """,
+        {"id": record_id},
+    )
+    medicine_rows = fetch_all(
+        """
+        SELECT medicine_id, quantity, unit_price, total_price
+        FROM medical_record_medicines
+        WHERE medical_record_id=:id
+        ORDER BY record_medicine_id ASC
+        """,
+        {"id": record_id},
+    )
+    subtotal = sum(int(r.get("total_price") or 0) for r in service_rows + medicine_rows)
+    execute(
+        """
+        INSERT INTO invoices (customer_id, pet_id, medical_record_id, invoice_date, discount, subtotal, deposit, total_amount)
+        VALUES (:customer_id, :pet_id, :medical_record_id, :invoice_date, 0, :subtotal, 0, :total_amount)
+        """,
+        {
+            "customer_id": record["customer_id"],
+            "pet_id": record["pet_id"],
+            "medical_record_id": record_id,
+            "invoice_date": datetime.now(),
+            "subtotal": subtotal,
+            "total_amount": subtotal,
+        },
+    )
+    invoice = fetch_one("SELECT invoice_id FROM invoices ORDER BY invoice_id DESC LIMIT 1")
+    for row in service_rows:
+        execute(
+            """
+            INSERT INTO invoice_details (invoice_id, service_type_id, quantity, unit_price, total_price)
+            VALUES (:invoice_id, :service_type_id, :quantity, :unit_price, :total_price)
+            """,
+            {
+                "invoice_id": invoice["invoice_id"],
+                "service_type_id": row["service_type_id"],
+                "quantity": int(row.get("quantity") or 1),
+                "unit_price": int(row.get("unit_price") or 0),
+                "total_price": int(row.get("total_price") or 0),
+            },
+        )
+    for row in medicine_rows:
+        execute(
+            """
+            INSERT INTO invoice_medicine_details (invoice_id, medicine_id, quantity, unit_price, total_price)
+            VALUES (:invoice_id, :medicine_id, :quantity, :unit_price, :total_price)
+            """,
+            {
+                "invoice_id": invoice["invoice_id"],
+                "medicine_id": row["medicine_id"],
+                "quantity": int(row.get("quantity") or 1),
+                "unit_price": int(row.get("unit_price") or 0),
+                "total_price": int(row.get("total_price") or 0),
+            },
+        )
+    set_flash(request, success="Them hoa don thanh cong")
+    return RedirectResponse(url=f"/admin/invoices/edit/{invoice['invoice_id']}", status_code=302)
 
 
 @router.get("/invoices/edit/{invoice_id}", response_class=HTMLResponse)
@@ -955,10 +1159,42 @@ def invoice_edit_page(request: Request, invoice_id: int):
         return guard
     row = fetch_one("SELECT * FROM invoices WHERE invoice_id=:id", {"id": invoice_id})
     details = fetch_all("SELECT * FROM invoice_details WHERE invoice_id=:id ORDER BY detail_id ASC", {"id": invoice_id})
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
+    medicine_details = load_invoice_medicines(invoice_id)
+    vaccination_details = load_invoice_vaccinations(invoice_id)
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name FROM pets ORDER BY pet_name ASC")
     services = fetch_all("SELECT service_type_id, service_name, price FROM service_types ORDER BY service_name ASC")
-    return templates.TemplateResponse("admin/invoice/edit_invoice.html", {"request": request, "title": "Chinh sua hoa don", "flash": pop_flash(request), "row": row, "details": details, "action": "edit", "customers": customers, "pets": pets, "services": services})
+    medicines = fetch_all("SELECT medicine_id, medicine_name, unit_price FROM medicines ORDER BY medicine_name ASC")
+    vaccines = fetch_all("SELECT vaccine_id, vaccine_name, unit_price FROM vaccines ORDER BY vaccine_name ASC")
+    records = fetch_all(
+        """
+        SELECT mr.medical_record_id, mr.customer_id, mr.pet_id, mr.medical_record_visit_date, c.customer_name, p.pet_name
+        FROM medical_records mr
+        LEFT JOIN customers c ON c.customer_id = mr.customer_id
+        LEFT JOIN pets p ON p.pet_id = mr.pet_id
+        ORDER BY mr.medical_record_id DESC
+        """
+    )
+    return templates.TemplateResponse(
+        "admin/invoice/edit_invoice.html",
+        {
+            "request": request,
+            "title": "Chinh sua hoa don",
+            "flash": pop_flash(request),
+            "row": row,
+            "details": details,
+            "medicineDetails": medicine_details,
+            "vaccinationDetails": vaccination_details,
+            "action": "edit",
+            "customers": customers,
+            "pets": pets,
+            "services": services,
+            "serviceTypes": services,
+            "medicines": medicines,
+            "vaccines": vaccines,
+            "medicalRecords": records,
+        },
+    )
 
 
 def _save_invoice_details(invoice_id: int, service_ids: list[str], quantities: list[str], unit_prices: list[str], total_prices: list[str]) -> None:
@@ -981,6 +1217,50 @@ def _save_invoice_details(invoice_id: int, service_ids: list[str], quantities: l
         )
 
 
+def _save_invoice_medicine_details(
+    invoice_id: int, medicine_ids: list[str], quantities: list[str], unit_prices: list[str], total_prices: list[str]
+) -> None:
+    execute("DELETE FROM invoice_medicine_details WHERE invoice_id=:id", {"id": invoice_id})
+    for i, medicine_id in enumerate(medicine_ids):
+        if not medicine_id:
+            continue
+        execute(
+            """
+            INSERT INTO invoice_medicine_details (invoice_id, medicine_id, quantity, unit_price, total_price)
+            VALUES (:invoice_id, :medicine_id, :quantity, :unit_price, :total_price)
+            """,
+            {
+                "invoice_id": invoice_id,
+                "medicine_id": int(medicine_id),
+                "quantity": int(quantities[i]) if i < len(quantities) and quantities[i] else 1,
+                "unit_price": int(float(unit_prices[i])) if i < len(unit_prices) and unit_prices[i] else 0,
+                "total_price": int(float(total_prices[i])) if i < len(total_prices) and total_prices[i] else 0,
+            },
+        )
+
+
+def _save_invoice_vaccination_details(
+    invoice_id: int, vaccine_ids: list[str], quantities: list[str], unit_prices: list[str], total_prices: list[str]
+) -> None:
+    execute("DELETE FROM invoice_vaccination_details WHERE invoice_id=:id", {"id": invoice_id})
+    for i, vaccine_id in enumerate(vaccine_ids):
+        if not vaccine_id:
+            continue
+        execute(
+            """
+            INSERT INTO invoice_vaccination_details (invoice_id, vaccine_id, quantity, unit_price, total_price)
+            VALUES (:invoice_id, :vaccine_id, :quantity, :unit_price, :total_price)
+            """,
+            {
+                "invoice_id": invoice_id,
+                "vaccine_id": int(vaccine_id),
+                "quantity": int(quantities[i]) if i < len(quantities) and quantities[i] else 1,
+                "unit_price": int(float(unit_prices[i])) if i < len(unit_prices) and unit_prices[i] else 0,
+                "total_price": int(float(total_prices[i])) if i < len(total_prices) and total_prices[i] else 0,
+            },
+        )
+
+
 @router.post("/invoices/store")
 def invoice_store(
     request: Request,
@@ -992,23 +1272,48 @@ def invoice_store(
     deposit: int = Form(0),
     total_amount: int = Form(0),
     pet_enclosure_id: str = Form(""),
+    medical_record_id: str = Form(""),
     service_ids: list[str] = Form(default=[]),
     quantities: list[str] = Form(default=[]),
     unit_prices: list[str] = Form(default=[]),
     total_prices: list[str] = Form(default=[]),
+    medicine_ids: list[str] = Form(default=[]),
+    medicine_quantities: list[str] = Form(default=[]),
+    medicine_unit_prices: list[str] = Form(default=[]),
+    medicine_total_prices: list[str] = Form(default=[]),
+    vaccine_ids: list[str] = Form(default=[]),
+    vaccine_quantities: list[str] = Form(default=[]),
+    vaccine_unit_prices: list[str] = Form(default=[]),
+    vaccine_total_prices: list[str] = Form(default=[]),
 ):
     guard = _guard_staff(request)
     if guard:
         return guard
     execute(
         """
-        INSERT INTO invoices (customer_id, pet_id, pet_enclosure_id, invoice_date, discount, subtotal, deposit, total_amount)
-        VALUES (:customer_id, :pet_id, :pet_enclosure_id, :invoice_date, :discount, :subtotal, :deposit, :total_amount)
+        INSERT INTO invoices (customer_id, pet_id, pet_enclosure_id, medical_record_id, invoice_date, discount, subtotal, deposit, total_amount)
+        VALUES (:customer_id, :pet_id, :pet_enclosure_id, :medical_record_id, :invoice_date, :discount, :subtotal, :deposit, :total_amount)
         """,
-        {"customer_id": customer_id, "pet_id": pet_id, "pet_enclosure_id": int(pet_enclosure_id) if pet_enclosure_id else None, "invoice_date": invoice_date, "discount": discount or 0, "subtotal": subtotal or 0, "deposit": deposit or 0, "total_amount": total_amount or 0},
+        {
+            "customer_id": customer_id,
+            "pet_id": pet_id,
+            "pet_enclosure_id": int(pet_enclosure_id) if pet_enclosure_id else None,
+            "medical_record_id": int(medical_record_id) if medical_record_id else None,
+            "invoice_date": invoice_date,
+            "discount": discount or 0,
+            "subtotal": subtotal or 0,
+            "deposit": deposit or 0,
+            "total_amount": total_amount or 0,
+        },
     )
     invoice = fetch_one("SELECT invoice_id FROM invoices ORDER BY invoice_id DESC LIMIT 1")
     _save_invoice_details(invoice["invoice_id"], service_ids, quantities, unit_prices, total_prices)
+    _save_invoice_medicine_details(
+        invoice["invoice_id"], medicine_ids, medicine_quantities, medicine_unit_prices, medicine_total_prices
+    )
+    _save_invoice_vaccination_details(
+        invoice["invoice_id"], vaccine_ids, vaccine_quantities, vaccine_unit_prices, vaccine_total_prices
+    )
     set_flash(request, success="Them hoa don thanh cong")
     return RedirectResponse(url="/admin/invoices", status_code=302)
 
@@ -1025,10 +1330,19 @@ def invoice_update(
     deposit: int = Form(0),
     total_amount: int = Form(0),
     pet_enclosure_id: str = Form(""),
+    medical_record_id: str = Form(""),
     service_ids: list[str] = Form(default=[]),
     quantities: list[str] = Form(default=[]),
     unit_prices: list[str] = Form(default=[]),
     total_prices: list[str] = Form(default=[]),
+    medicine_ids: list[str] = Form(default=[]),
+    medicine_quantities: list[str] = Form(default=[]),
+    medicine_unit_prices: list[str] = Form(default=[]),
+    medicine_total_prices: list[str] = Form(default=[]),
+    vaccine_ids: list[str] = Form(default=[]),
+    vaccine_quantities: list[str] = Form(default=[]),
+    vaccine_unit_prices: list[str] = Form(default=[]),
+    vaccine_total_prices: list[str] = Form(default=[]),
 ):
     guard = _guard_staff(request)
     if guard:
@@ -1036,13 +1350,26 @@ def invoice_update(
     execute(
         """
         UPDATE invoices
-        SET customer_id=:customer_id, pet_id=:pet_id, pet_enclosure_id=:pet_enclosure_id, invoice_date=:invoice_date,
+        SET customer_id=:customer_id, pet_id=:pet_id, pet_enclosure_id=:pet_enclosure_id, medical_record_id=:medical_record_id, invoice_date=:invoice_date,
             discount=:discount, subtotal=:subtotal, deposit=:deposit, total_amount=:total_amount
         WHERE invoice_id=:id
         """,
-        {"customer_id": customer_id, "pet_id": pet_id, "pet_enclosure_id": int(pet_enclosure_id) if pet_enclosure_id else None, "invoice_date": invoice_date, "discount": discount or 0, "subtotal": subtotal or 0, "deposit": deposit or 0, "total_amount": total_amount or 0, "id": invoice_id},
+        {
+            "customer_id": customer_id,
+            "pet_id": pet_id,
+            "pet_enclosure_id": int(pet_enclosure_id) if pet_enclosure_id else None,
+            "medical_record_id": int(medical_record_id) if medical_record_id else None,
+            "invoice_date": invoice_date,
+            "discount": discount or 0,
+            "subtotal": subtotal or 0,
+            "deposit": deposit or 0,
+            "total_amount": total_amount or 0,
+            "id": invoice_id,
+        },
     )
     _save_invoice_details(invoice_id, service_ids, quantities, unit_prices, total_prices)
+    _save_invoice_medicine_details(invoice_id, medicine_ids, medicine_quantities, medicine_unit_prices, medicine_total_prices)
+    _save_invoice_vaccination_details(invoice_id, vaccine_ids, vaccine_quantities, vaccine_unit_prices, vaccine_total_prices)
     set_flash(request, success="Cap nhat hoa don thanh cong")
     return RedirectResponse(url="/admin/invoices", status_code=302)
 
@@ -1053,6 +1380,8 @@ def invoice_delete(request: Request, invoice_id: int):
     if guard:
         return guard
     execute("DELETE FROM invoice_details WHERE invoice_id=:id", {"id": invoice_id})
+    execute("DELETE FROM invoice_medicine_details WHERE invoice_id=:id", {"id": invoice_id})
+    execute("DELETE FROM invoice_vaccination_details WHERE invoice_id=:id", {"id": invoice_id})
     execute("DELETE FROM invoices WHERE invoice_id=:id", {"id": invoice_id})
     set_flash(request, success="Xoa hoa don thanh cong")
     return RedirectResponse(url="/admin/invoices", status_code=302)
@@ -1084,8 +1413,8 @@ def pet_enclosure_add_page(request: Request):
     guard = _guard_staff(request)
     if guard:
         return guard
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name, pet_species FROM pets ORDER BY pet_name ASC")
     settings = fetch_one("SELECT * FROM general_settings LIMIT 1")
     return templates.TemplateResponse("admin/pet_enclosure/add_pet_enclosure.html", {"request": request, "title": "Them luu chuong", "flash": pop_flash(request), "row": None, "action": "add", "customers": customers, "pets": pets, "settings": settings})
 
@@ -1096,8 +1425,8 @@ def pet_enclosure_edit_page(request: Request, enclosure_id: int):
     if guard:
         return guard
     row = fetch_one("SELECT * FROM pet_enclosures WHERE pet_enclosure_id=:id", {"id": enclosure_id})
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name, pet_species FROM pets ORDER BY pet_name ASC")
     settings = fetch_one("SELECT * FROM general_settings LIMIT 1")
     return templates.TemplateResponse("admin/pet_enclosure/edit_pet_enclosure.html", {"request": request, "title": "Chinh sua luu chuong", "flash": pop_flash(request), "row": row, "action": "edit", "customers": customers, "pets": pets, "settings": settings})
 
@@ -1176,9 +1505,45 @@ def pet_enclosure_checkout_page(request: Request, enclosure_id: int):
         """,
         {"id": enclosure_id},
     )
+    if not row:
+        set_flash(request, error="Khong tim thay luu chuong")
+        return RedirectResponse(url="/admin/pet-enclosures", status_code=302)
+    customer = fetch_one("SELECT * FROM customers WHERE customer_id=:id", {"id": row["customer_id"]})
+    pet = fetch_one("SELECT * FROM pets WHERE pet_id=:id", {"id": row["pet_id"]})
+    check_in = row.get("check_in_date")
+    now_dt = datetime.now()
+    if isinstance(check_in, datetime):
+        delta_days = (now_dt.date() - check_in.date()).days + 1
+    else:
+        delta_days = 1
+    days = max(1, delta_days)
+    enclosure_fee = int(row.get("daily_rate") or 0) * days
+    overtime_fee = 0
     settings = fetch_one("SELECT * FROM general_settings LIMIT 1")
     services = fetch_all("SELECT service_type_id, service_name, price FROM service_types ORDER BY service_name ASC")
-    return templates.TemplateResponse("admin/pet_enclosure/checkout_invoice.html", {"request": request, "title": "Checkout luu chuong", "flash": pop_flash(request), "row": row, "settings": settings, "services": services})
+    boarding = fetch_one(
+        "SELECT service_type_id FROM service_types WHERE service_name = :name LIMIT 1",
+        {"name": "Lưu chuồng theo ngày"},
+    )
+    boarding_service_id = boarding["service_type_id"] if boarding else None
+    return templates.TemplateResponse(
+        "admin/pet_enclosure/checkout_invoice.html",
+        {
+            "request": request,
+            "title": "Checkout luu chuong",
+            "flash": pop_flash(request),
+            "row": row,
+            "customer": customer,
+            "pet": pet,
+            "settings": settings,
+            "services": services,
+            "serviceTypes": services,
+            "boardingServiceId": boarding_service_id,
+            "days": days,
+            "enclosureFee": enclosure_fee,
+            "overtimeFee": overtime_fee,
+        },
+    )
 
 
 @router.post("/pet-enclosures/checkout/{enclosure_id}")
@@ -1233,12 +1598,13 @@ def pet_vaccinations_page(request: Request, page: int = Query(1)):
     page, offset, total_pages = _pager(total, page, 10)
     rows = fetch_all(
         """
-        SELECT pv.*, v.vaccine_name, c.customer_name, p.pet_name, d.doctor_name
+        SELECT pv.*, v.vaccine_name, c.customer_name, p.pet_name, d.doctor_name, mr.medical_record_type
         FROM pet_vaccinations pv
         LEFT JOIN vaccines v ON v.vaccine_id=pv.vaccine_id
         LEFT JOIN customers c ON c.customer_id=pv.customer_id
         LEFT JOIN pets p ON p.pet_id=pv.pet_id
         LEFT JOIN doctors d ON d.doctor_id=pv.doctor_id
+        LEFT JOIN medical_records mr ON mr.medical_record_id=pv.medical_record_id
         ORDER BY pv.pet_vaccination_id DESC
         LIMIT :limit OFFSET :offset
         """,
@@ -1253,10 +1619,11 @@ def pet_vaccination_add_page(request: Request):
     if guard:
         return guard
     vaccines = fetch_all("SELECT vaccine_id, vaccine_name FROM vaccines ORDER BY vaccine_name ASC")
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name FROM pets ORDER BY pet_name ASC")
     doctors = fetch_all("SELECT doctor_id, doctor_name FROM doctors ORDER BY doctor_name ASC")
-    return templates.TemplateResponse("admin/pet_vaccination/add_pet_vaccination.html", {"request": request, "title": "Them tiem chung", "flash": pop_flash(request), "row": None, "action": "add", "vaccines": vaccines, "customers": customers, "pets": pets, "doctors": doctors})
+    records = fetch_all("SELECT medical_record_id, customer_id, pet_id, medical_record_type, medical_record_visit_date FROM medical_records ORDER BY medical_record_id DESC")
+    return templates.TemplateResponse("admin/pet_vaccination/add_pet_vaccination.html", {"request": request, "title": "Them tiem chung", "flash": pop_flash(request), "row": None, "action": "add", "vaccines": vaccines, "customers": customers, "pets": pets, "doctors": doctors, "medicalRecords": records})
 
 
 @router.get("/pet-vaccinations/edit/{vaccination_id}", response_class=HTMLResponse)
@@ -1266,10 +1633,11 @@ def pet_vaccination_edit_page(request: Request, vaccination_id: int):
         return guard
     row = fetch_one("SELECT * FROM pet_vaccinations WHERE pet_vaccination_id=:id", {"id": vaccination_id})
     vaccines = fetch_all("SELECT vaccine_id, vaccine_name FROM vaccines ORDER BY vaccine_name ASC")
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name FROM pets ORDER BY pet_name ASC")
     doctors = fetch_all("SELECT doctor_id, doctor_name FROM doctors ORDER BY doctor_name ASC")
-    return templates.TemplateResponse("admin/pet_vaccination/edit_pet_vaccination.html", {"request": request, "title": "Chinh sua tiem chung", "flash": pop_flash(request), "row": row, "action": "edit", "vaccines": vaccines, "customers": customers, "pets": pets, "doctors": doctors})
+    records = fetch_all("SELECT medical_record_id, customer_id, pet_id, medical_record_type, medical_record_visit_date FROM medical_records ORDER BY medical_record_id DESC")
+    return templates.TemplateResponse("admin/pet_vaccination/edit_pet_vaccination.html", {"request": request, "title": "Chinh sua tiem chung", "flash": pop_flash(request), "row": row, "action": "edit", "vaccines": vaccines, "customers": customers, "pets": pets, "doctors": doctors, "medicalRecords": records})
 
 
 @router.post("/pet-vaccinations/store")
@@ -1282,16 +1650,17 @@ def pet_vaccination_store(
     vaccination_date: str = Form(...),
     next_vaccination_date: str = Form(""),
     notes: str = Form(""),
+    medical_record_id: str = Form(""),
 ):
     guard = _guard_staff(request)
     if guard:
         return guard
     execute(
         """
-        INSERT INTO pet_vaccinations (vaccine_id, customer_id, pet_id, doctor_id, vaccination_date, next_vaccination_date, notes)
-        VALUES (:vaccine_id, :customer_id, :pet_id, :doctor_id, :vaccination_date, :next_vaccination_date, :notes)
+        INSERT INTO pet_vaccinations (vaccine_id, customer_id, pet_id, doctor_id, medical_record_id, vaccination_date, next_vaccination_date, notes)
+        VALUES (:vaccine_id, :customer_id, :pet_id, :doctor_id, :medical_record_id, :vaccination_date, :next_vaccination_date, :notes)
         """,
-        {"vaccine_id": vaccine_id, "customer_id": customer_id, "pet_id": pet_id, "doctor_id": doctor_id, "vaccination_date": vaccination_date, "next_vaccination_date": next_vaccination_date or None, "notes": notes or None},
+        {"vaccine_id": vaccine_id, "customer_id": customer_id, "pet_id": pet_id, "doctor_id": doctor_id, "medical_record_id": int(medical_record_id) if medical_record_id else None, "vaccination_date": vaccination_date, "next_vaccination_date": next_vaccination_date or None, "notes": notes or None},
     )
     set_flash(request, success="Them tiem chung thanh cong")
     return RedirectResponse(url="/admin/pet-vaccinations", status_code=302)
@@ -1308,6 +1677,7 @@ def pet_vaccination_update(
     vaccination_date: str = Form(...),
     next_vaccination_date: str = Form(""),
     notes: str = Form(""),
+    medical_record_id: str = Form(""),
 ):
     guard = _guard_staff(request)
     if guard:
@@ -1316,10 +1686,10 @@ def pet_vaccination_update(
         """
         UPDATE pet_vaccinations
         SET vaccine_id=:vaccine_id, customer_id=:customer_id, pet_id=:pet_id, doctor_id=:doctor_id,
-            vaccination_date=:vaccination_date, next_vaccination_date=:next_vaccination_date, notes=:notes
+            medical_record_id=:medical_record_id, vaccination_date=:vaccination_date, next_vaccination_date=:next_vaccination_date, notes=:notes
         WHERE pet_vaccination_id=:id
         """,
-        {"vaccine_id": vaccine_id, "customer_id": customer_id, "pet_id": pet_id, "doctor_id": doctor_id, "vaccination_date": vaccination_date, "next_vaccination_date": next_vaccination_date or None, "notes": notes or None, "id": vaccination_id},
+        {"vaccine_id": vaccine_id, "customer_id": customer_id, "pet_id": pet_id, "doctor_id": doctor_id, "medical_record_id": int(medical_record_id) if medical_record_id else None, "vaccination_date": vaccination_date, "next_vaccination_date": next_vaccination_date or None, "notes": notes or None, "id": vaccination_id},
     )
     set_flash(request, success="Cap nhat tiem chung thanh cong")
     return RedirectResponse(url="/admin/pet-vaccinations", status_code=302)
@@ -1344,10 +1714,11 @@ def treatment_courses_page(request: Request, page: int = Query(1)):
     page, offset, total_pages = _pager(total, page, 10)
     rows = fetch_all(
         """
-        SELECT tc.*, c.customer_name, p.pet_name
+        SELECT tc.*, c.customer_name, p.pet_name, mr.medical_record_type
         FROM treatment_courses tc
         LEFT JOIN customers c ON c.customer_id=tc.customer_id
         LEFT JOIN pets p ON p.pet_id=tc.pet_id
+        LEFT JOIN medical_records mr ON mr.medical_record_id=tc.medical_record_id
         ORDER BY tc.treatment_course_id DESC
         LIMIT :limit OFFSET :offset
         """,
@@ -1361,9 +1732,10 @@ def treatment_course_add_page(request: Request):
     guard = _guard_staff(request)
     if guard:
         return guard
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
-    return templates.TemplateResponse("admin/treatment_course/add_treatment_course.html", {"request": request, "title": "Them lieu trinh", "flash": pop_flash(request), "row": None, "action": "add", "customers": customers, "pets": pets})
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name FROM pets ORDER BY pet_name ASC")
+    records = fetch_all("SELECT medical_record_id, customer_id, pet_id, medical_record_type, medical_record_visit_date FROM medical_records ORDER BY medical_record_id DESC")
+    return templates.TemplateResponse("admin/treatment_course/add_treatment_course.html", {"request": request, "title": "Them lieu trinh", "flash": pop_flash(request), "row": None, "action": "add", "customers": customers, "pets": pets, "medicalRecords": records})
 
 
 @router.get("/treatment-courses/edit/{course_id}", response_class=HTMLResponse)
@@ -1372,9 +1744,10 @@ def treatment_course_edit_page(request: Request, course_id: int):
     if guard:
         return guard
     row = fetch_one("SELECT * FROM treatment_courses WHERE treatment_course_id=:id", {"id": course_id})
-    customers = fetch_all("SELECT customer_id, customer_name FROM customers ORDER BY customer_name ASC")
-    pets = fetch_all("SELECT pet_id, pet_name FROM pets ORDER BY pet_name ASC")
-    return templates.TemplateResponse("admin/treatment_course/edit_treatment_course.html", {"request": request, "title": "Chinh sua lieu trinh", "flash": pop_flash(request), "row": row, "action": "edit", "customers": customers, "pets": pets})
+    customers = fetch_all("SELECT customer_id, customer_name, customer_phone_number FROM customers ORDER BY customer_name ASC")
+    pets = fetch_all("SELECT pet_id, customer_id, pet_name FROM pets ORDER BY pet_name ASC")
+    records = fetch_all("SELECT medical_record_id, customer_id, pet_id, medical_record_type, medical_record_visit_date FROM medical_records ORDER BY medical_record_id DESC")
+    return templates.TemplateResponse("admin/treatment_course/edit_treatment_course.html", {"request": request, "title": "Chinh sua lieu trinh", "flash": pop_flash(request), "row": row, "action": "edit", "customers": customers, "pets": pets, "medicalRecords": records})
 
 
 @router.post("/treatment-courses/store")
@@ -1385,16 +1758,17 @@ def treatment_course_store(
     start_date: str = Form(...),
     end_date: str = Form(""),
     status: str = Form("1"),
+    medical_record_id: str = Form(""),
 ):
     guard = _guard_staff(request)
     if guard:
         return guard
     execute(
         """
-        INSERT INTO treatment_courses (customer_id, pet_id, start_date, end_date, status)
-        VALUES (:customer_id, :pet_id, :start_date, :end_date, :status)
+        INSERT INTO treatment_courses (customer_id, pet_id, medical_record_id, start_date, end_date, status)
+        VALUES (:customer_id, :pet_id, :medical_record_id, :start_date, :end_date, :status)
         """,
-        {"customer_id": customer_id, "pet_id": pet_id, "start_date": start_date, "end_date": end_date or None, "status": status},
+        {"customer_id": customer_id, "pet_id": pet_id, "medical_record_id": int(medical_record_id) if medical_record_id else None, "start_date": start_date, "end_date": end_date or None, "status": status},
     )
     set_flash(request, success="Them lieu trinh thanh cong")
     return RedirectResponse(url="/admin/treatment-courses", status_code=302)
@@ -1409,6 +1783,7 @@ def treatment_course_update(
     start_date: str = Form(...),
     end_date: str = Form(""),
     status: str = Form("1"),
+    medical_record_id: str = Form(""),
 ):
     guard = _guard_staff(request)
     if guard:
@@ -1416,10 +1791,10 @@ def treatment_course_update(
     execute(
         """
         UPDATE treatment_courses
-        SET customer_id=:customer_id, pet_id=:pet_id, start_date=:start_date, end_date=:end_date, status=:status
+        SET customer_id=:customer_id, pet_id=:pet_id, medical_record_id=:medical_record_id, start_date=:start_date, end_date=:end_date, status=:status
         WHERE treatment_course_id=:id
         """,
-        {"customer_id": customer_id, "pet_id": pet_id, "start_date": start_date, "end_date": end_date or None, "status": status, "id": course_id},
+        {"customer_id": customer_id, "pet_id": pet_id, "medical_record_id": int(medical_record_id) if medical_record_id else None, "start_date": start_date, "end_date": end_date or None, "status": status, "id": course_id},
     )
     set_flash(request, success="Cap nhat lieu trinh thanh cong")
     return RedirectResponse(url="/admin/treatment-courses", status_code=302)
@@ -1747,7 +2122,7 @@ def prescription_delete(request: Request, course_id: int, session_id: int, presc
 
 @router.get("/settings", response_class=HTMLResponse)
 def settings_page(request: Request):
-    guard = _guard_staff(request)
+    guard = _guard_admin(request)
     if guard:
         return guard
     row = fetch_one("SELECT * FROM general_settings LIMIT 1")
@@ -1768,7 +2143,7 @@ def settings_update(
     overtime_fee_per_hour: int = Form(0),
     signing_place: str = Form(""),
 ):
-    guard = _guard_staff(request)
+    guard = _guard_admin(request)
     if guard:
         return guard
     existing = fetch_one("SELECT setting_id FROM general_settings LIMIT 1")
@@ -1822,6 +2197,26 @@ def print_medical_record(request: Request, record_id: int):
     pet = fetch_one("SELECT * FROM pets WHERE pet_id=:id", {"id": record["pet_id"]})
     doctor = fetch_one("SELECT * FROM doctors WHERE doctor_id=:id", {"id": record["doctor_id"]})
     vaccination = fetch_one("SELECT * FROM vaccination_records WHERE medical_record_id=:id", {"id": record_id})
+    record_services = fetch_all(
+        """
+        SELECT rs.*, st.service_name
+        FROM medical_record_services rs
+        LEFT JOIN service_types st ON st.service_type_id = rs.service_type_id
+        WHERE rs.medical_record_id=:id
+        ORDER BY rs.record_service_id ASC
+        """,
+        {"id": record_id},
+    )
+    record_medicines = fetch_all(
+        """
+        SELECT rm.*, m.medicine_name, m.medicine_route
+        FROM medical_record_medicines rm
+        LEFT JOIN medicines m ON m.medicine_id = rm.medicine_id
+        WHERE rm.medical_record_id=:id
+        ORDER BY rm.record_medicine_id ASC
+        """,
+        {"id": record_id},
+    )
     settings = fetch_one("SELECT * FROM general_settings LIMIT 1")
     return templates.TemplateResponse(
         "admin/print/medical_record.html",
@@ -1833,6 +2228,8 @@ def print_medical_record(request: Request, record_id: int):
             "pet": pet,
             "doctor": doctor,
             "vaccination": vaccination,
+            "record_services": record_services,
+            "record_medicines": record_medicines,
             "settings": settings,
             "flash": pop_flash(request),
         },
@@ -1910,31 +2307,82 @@ def print_pet_enclosure(request: Request, enclosure_id: int):
 
 @router.get("/printing-template", response_class=HTMLResponse)
 def printing_template_page(request: Request):
+    return RedirectResponse(url="/admin/printing-template/pet-enclosure", status_code=302)
+
+
+@router.get("/printing-template/pet-enclosure", response_class=HTMLResponse)
+def printing_template_pet_enclosure_page(request: Request):
     guard = _guard_staff(request)
     if guard:
         return guard
-    invoices = fetch_all(
+    enclosures = fetch_all(
         """
-        SELECT i.*, c.customer_name, p.pet_name
-        FROM invoices i
-        LEFT JOIN customers c ON c.customer_id=i.customer_id
-        LEFT JOIN pets p ON p.pet_id=i.pet_id
-        ORDER BY i.invoice_id DESC
+        SELECT pe.pet_enclosure_id, pe.check_in_date, pe.check_out_date, pe.pet_enclosure_status,
+               c.customer_name, p.pet_name, i.invoice_id
+        FROM pet_enclosures pe
+        LEFT JOIN customers c ON c.customer_id = pe.customer_id
+        LEFT JOIN pets p ON p.pet_id = pe.pet_id
+        LEFT JOIN invoices i ON i.pet_enclosure_id = pe.pet_enclosure_id
+        ORDER BY pe.pet_enclosure_id DESC
         """
     )
-    return templates.TemplateResponse("admin/printing_template/printing_template.html", {"request": request, "title": "Mau in", "flash": pop_flash(request), "invoices": invoices})
+    return templates.TemplateResponse(
+        "admin/printing_template/pet_enclosure_printing.html",
+        {"request": request, "title": "Mau in luu chuong", "flash": pop_flash(request), "enclosures": enclosures},
+    )
 
 
-@router.get("/printing-template/load-invoice/{invoice_id}", response_class=HTMLResponse)
-def printing_template_load_invoice(request: Request, invoice_id: int):
+@router.get("/printing-template/pet-enclosure/load-commit/{enclosure_id}", response_class=HTMLResponse)
+def printing_template_pet_enclosure_load_commit(request: Request, enclosure_id: int):
     guard = _guard_staff(request)
     if guard:
         return guard
-    invoice = fetch_one("SELECT * FROM invoices WHERE invoice_id=:id", {"id": invoice_id})
+    enclosure = fetch_one("SELECT * FROM pet_enclosures WHERE pet_enclosure_id=:id", {"id": enclosure_id})
+    if not enclosure:
+        return templates.TemplateResponse(
+            "admin/printing_template/load_commit.html",
+            {"request": request, "title": "Giay cam ket", "error_message": "Khong tim thay luu chuong"},
+        )
+    invoice = fetch_one("SELECT * FROM invoices WHERE pet_enclosure_id=:id ORDER BY invoice_id DESC LIMIT 1", {"id": enclosure_id})
+    if not invoice:
+        return templates.TemplateResponse(
+            "admin/printing_template/load_commit.html",
+            {"request": request, "title": "Giay cam ket", "error_message": "Luu chuong nay chua co hoa don"},
+        )
+    customer = fetch_one("SELECT * FROM customers WHERE customer_id=:id", {"id": enclosure["customer_id"]})
+    pet = fetch_one("SELECT * FROM pets WHERE pet_id=:id", {"id": enclosure["pet_id"]})
+    settings = fetch_one("SELECT * FROM general_settings LIMIT 1")
+    boarding_service = fetch_one(
+        "SELECT price FROM service_types WHERE service_name=:name LIMIT 1",
+        {"name": "Lưu chuồng theo ngày"},
+    )
+    boarding_daily_rate = int((boarding_service or {}).get("price") or 0)
+    display_daily_rate = boarding_daily_rate if boarding_daily_rate > 0 else int(enclosure.get("daily_rate") or 0)
+    return templates.TemplateResponse(
+        "admin/printing_template/load_commit.html",
+        {
+            "request": request,
+            "title": "Giay cam ket",
+            "invoice": invoice,
+            "enclosure": enclosure,
+            "customer": customer,
+            "pet": pet,
+            "settings": settings,
+            "displayDailyRate": display_daily_rate,
+        },
+    )
+
+
+@router.get("/printing-template/pet-enclosure/load-invoice/{enclosure_id}", response_class=HTMLResponse)
+def printing_template_pet_enclosure_load_invoice(request: Request, enclosure_id: int):
+    guard = _guard_staff(request)
+    if guard:
+        return guard
+    invoice = fetch_one("SELECT * FROM invoices WHERE pet_enclosure_id=:id ORDER BY invoice_id DESC LIMIT 1", {"id": enclosure_id})
     if not invoice:
         return templates.TemplateResponse(
             "admin/printing_template/load_invoice.html",
-            {"request": request, "title": "Mau in hoa don", "error_message": "Khong tim thay hoa don"},
+            {"request": request, "title": "Mau in hoa don", "error_message": "Luu chuong nay chua co hoa don"},
         )
     customer = fetch_one("SELECT * FROM customers WHERE customer_id=:id", {"id": invoice["customer_id"]})
     pet = fetch_one("SELECT * FROM pets WHERE pet_id=:id", {"id": invoice["pet_id"]})
@@ -1945,7 +2393,7 @@ def printing_template_load_invoice(request: Request, invoice_id: int):
         LEFT JOIN service_types s ON s.service_type_id=d.service_type_id
         WHERE d.invoice_id=:id
         """,
-        {"id": invoice_id},
+        {"id": invoice["invoice_id"]},
     )
     settings = fetch_one("SELECT * FROM general_settings LIMIT 1")
     return templates.TemplateResponse(
@@ -1959,25 +2407,4 @@ def printing_template_load_invoice(request: Request, invoice_id: int):
             "details": details,
             "settings": settings,
         },
-    )
-
-
-@router.get("/printing-template/load-commit/{invoice_id}", response_class=HTMLResponse)
-def printing_template_load_commit(request: Request, invoice_id: int):
-    guard = _guard_staff(request)
-    if guard:
-        return guard
-    invoice = fetch_one("SELECT * FROM invoices WHERE invoice_id=:id", {"id": invoice_id})
-    if not invoice or not invoice.get("pet_enclosure_id"):
-        return templates.TemplateResponse(
-            "admin/printing_template/load_commit.html",
-            {"request": request, "title": "Giay cam ket", "error_message": "Hoa don nay khong gan luu chuong"},
-        )
-    enclosure = fetch_one("SELECT * FROM pet_enclosures WHERE pet_enclosure_id=:id", {"id": invoice["pet_enclosure_id"]})
-    customer = fetch_one("SELECT * FROM customers WHERE customer_id=:id", {"id": invoice["customer_id"]})
-    pet = fetch_one("SELECT * FROM pets WHERE pet_id=:id", {"id": invoice["pet_id"]})
-    settings = fetch_one("SELECT * FROM general_settings LIMIT 1")
-    return templates.TemplateResponse(
-        "admin/printing_template/load_commit.html",
-        {"request": request, "title": "Giay cam ket", "invoice": invoice, "enclosure": enclosure, "customer": customer, "pet": pet, "settings": settings},
     )

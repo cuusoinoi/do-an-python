@@ -103,6 +103,64 @@
             <div class="section-title">Chi tiết khám / Điều trị</div>
             <div class="section-content">{{ nl2br(esc(record.medical_record_details or 'Không có')) }}</div>
         </div>
+        
+        <div class="section">
+            <div class="section-title">Chi tiết dịch vụ</div>
+            {% if record_services %}
+                <table style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="border:1px solid #ddd; padding:6px;">Dịch vụ</th>
+                            <th style="border:1px solid #ddd; padding:6px;">SL</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Đơn giá</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in record_services %}
+                            <tr>
+                                <td style="border:1px solid #ddd; padding:6px;">{{ item.service_name or 'N/A' }}</td>
+                                <td style="border:1px solid #ddd; padding:6px; text-align:center;">{{ item.quantity or 0 }}</td>
+                                <td style="border:1px solid #ddd; padding:6px; text-align:right;">{{ number_format(item.unit_price or 0, 0, ',', '.') }}</td>
+                                <td style="border:1px solid #ddd; padding:6px; text-align:right;">{{ number_format(item.total_price or 0, 0, ',', '.') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="section-content">Không có dịch vụ.</div>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Chi tiết thuốc</div>
+            {% if record_medicines %}
+                <table style="width:100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th style="border:1px solid #ddd; padding:6px;">Thuốc</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Đường dùng</th>
+                            <th style="border:1px solid #ddd; padding:6px;">SL</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Đơn giá</th>
+                            <th style="border:1px solid #ddd; padding:6px;">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in record_medicines %}
+                            <tr>
+                                <td style="border:1px solid #ddd; padding:6px;">{{ item.medicine_name or 'N/A' }}</td>
+                                <td style="border:1px solid #ddd; padding:6px;">{{ item.medicine_route or '-' }}</td>
+                                <td style="border:1px solid #ddd; padding:6px; text-align:center;">{{ item.quantity or 0 }}</td>
+                                <td style="border:1px solid #ddd; padding:6px; text-align:right;">{{ number_format(item.unit_price or 0, 0, ',', '.') }}</td>
+                                <td style="border:1px solid #ddd; padding:6px; text-align:right;">{{ number_format(item.total_price or 0, 0, ',', '.') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="section-content">Không có thuốc.</div>
+            {% endif %}
+        </div>
 
         <div class="signature">
             <div class="signature-box">

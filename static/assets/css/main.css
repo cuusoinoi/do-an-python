@@ -408,6 +408,7 @@ body.body__login {
 
 .btn.btn-password,
 .btn.btn-print,
+.btn-print,
 .btn-invoice,
 .btn.btn-steth,
 .btn.btn-prescription {
@@ -415,6 +416,7 @@ body.body__login {
     color: #fff;
 }
 .btn.btn-print:hover,
+.btn-print:hover,
 .btn.btn-password:hover,
 .btn-invoice:hover,
 .btn.btn-steth:hover,
@@ -791,6 +793,17 @@ body {
 
 .sidebar__item--open>.sidebar__submenu {
     display: flex;
+}
+
+/* Desktop expanded: open submenu on hover without click */
+@media (min-width: 1024px) {
+    .sidebar:not(.sidebar--collapsed) .sidebar__item--has-submenu:hover > .sidebar__submenu {
+        display: flex;
+    }
+
+    .sidebar:not(.sidebar--collapsed) .sidebar__item--has-submenu:hover > .sidebar__link .sidebar__arrow i {
+        transform: rotate(-90deg);
+    }
 }
 
 /* ===== Popup submenu when collapsed ===== */

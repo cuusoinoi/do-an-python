@@ -38,6 +38,7 @@
                             <th>Thú cưng</th>
                             <th>Bác sĩ</th>
                             <th>Tóm tắt</th>
+                            <th>Chi tiết DV/Thuốc</th>
                             <th>Hành động</th>
                         </tr>
                     </thead>
@@ -55,8 +56,10 @@
                                     <td>{{ row.pet_name }}</td>
                                     <td>{{ row.doctor_name }}</td>
                                     <td>{{ row.medical_record_summary or '' }}</td>
+                                    <td>{{ row.total_services or 0 }}/{{ row.total_medicines or 0 }}</td>
                                     <td>
                                         <div class="actions">
+                                            <a href="{{ site_url('admin/invoices/add-from-visit/' ~ row.medical_record_id) }}" class="btn btn-icon btn-add" title="Xuất hóa đơn"><i class="fas fa-file-invoice"></i></a>
                                             <a href="{{ site_url('admin/print/medical-record/' ~ row.medical_record_id) }}" class="btn btn-icon btn-print" title="In phiếu khám" target="_blank"><i class="fas fa-print"></i></a>
                                             <a href="{{ site_url('admin/medical-records/edit/' ~ row.medical_record_id) }}" class="btn btn-icon btn-edit" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
                                             <a href="{{ site_url('admin/medical-records/delete/' ~ row.medical_record_id) }}" class="btn btn-icon btn-delete" title="Xóa" onclick="return confirmDelete('Bạn có chắc muốn xóa phiếu khám này?', this.href)"><i class="fas fa-trash-alt"></i></a>
@@ -65,7 +68,7 @@
                                 </tr>
                             {% endfor %}
                         {% else %}
-                            <tr><td colspan="7">Chưa có phiếu khám nào.</td></tr>
+                            <tr><td colspan="8">Chưa có phiếu khám nào.</td></tr>
                         {% endif %}
                     </tbody>
                 </table>

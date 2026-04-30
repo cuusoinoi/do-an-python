@@ -31,6 +31,7 @@
                     <thead>
                         <tr>
                             <th>Ngày tiêm</th>
+                            <th>Mã phiếu khám</th>
                             <th>Vaccine</th>
                             <th>Khách hàng</th>
                             <th>Thú cưng</th>
@@ -44,6 +45,7 @@
                             {% for row in vaccinations %}
                                 <tr>
                                     <td>{{ date('d/m/Y', strtotime(row.vaccination_date)) }}</td>
+                                    <td>#{{ row.medical_record_id or '-' }}</td>
                                     <td>{{ row.vaccine_name }}</td>
                                     <td>{{ row.customer_name }}</td>
                                     <td>{{ row.pet_name }}</td>
@@ -58,7 +60,7 @@
                                 </tr>
                             {% endfor %}
                         {% else %}
-                            <tr><td colspan="7">Chưa có tiêm chủng nào.</td></tr>
+                            <tr><td colspan="8">Chưa có tiêm chủng nào.</td></tr>
                         {% endif %}
                     </tbody>
                 </table>

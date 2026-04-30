@@ -117,7 +117,7 @@
 
         <div class="sidebar__group">
             <div class="sidebar__group-title">Hóa đơn</div>
-            <div class="sidebar__item sidebar__item--has-submenu {{ 'sidebar__item--active sidebar__item--open' if isMenuActive('admin/invoices', currentUri) or isMenuActive('admin/printing-template', currentUri) else '' }}">
+            <div class="sidebar__item sidebar__item--has-submenu {{ 'sidebar__item--active sidebar__item--open' if isMenuActive('admin/invoices', currentUri) else '' }}">
                 <div class="sidebar__link">
                     <span class="sidebar__icon"><i class="fa-solid fa-file-invoice"></i></span>
                     <span class="sidebar__text">Hóa đơn</span>
@@ -125,14 +125,13 @@
                 </div>
                 <div class="sidebar__submenu">
                     <a href="{{ site_url('admin/invoices') }}" class="{{ 'submenu-active' if submenuActiveClass('admin/invoices', currentUri) else '' }}">Danh sách hóa đơn</a>
-                    <a href="{{ site_url('admin/printing-template') }}" class="{{ 'submenu-active' if submenuActiveClass('admin/printing-template', currentUri) else '' }}">Mẫu in hóa đơn</a>
                 </div>
                 <div class="sidebar__submenu-popup"></div>
             </div>
         </div>
 
         <div class="sidebar__group">
-            <div class="sidebar__group-title">Danh mục</div>
+            <div class="sidebar__group-title">Dịch vụ</div>
             <div class="sidebar__item sidebar__item--has-submenu {{ 'sidebar__item--active sidebar__item--open' if isMenuActive('admin/service-types', currentUri) else '' }}">
                 <div class="sidebar__link">
                     <span class="sidebar__icon"><i class="fa-solid fa-hands-holding-circle"></i></span>
@@ -145,6 +144,10 @@
                 </div>
                 <div class="sidebar__submenu-popup"></div>
             </div>
+        </div>
+        
+        <div class="sidebar__group">
+            <div class="sidebar__group-title">Danh mục</div>
             <div class="sidebar__item sidebar__item--has-submenu {{ 'sidebar__item--active sidebar__item--open' if isMenuActive('admin/medicines', currentUri) else '' }}">
                 <div class="sidebar__link">
                     <span class="sidebar__icon"><i class="fa-solid fa-pills"></i></span>
@@ -170,9 +173,21 @@
                 <div class="sidebar__submenu-popup"></div>
             </div>
         </div>
+        
+        <div class="sidebar__group">
+            <div class="sidebar__group-title">In ấn</div>
+            <div class="sidebar__item {{ 'sidebar__item--active' if isMenuActive('admin/printing-template/pet-enclosure', currentUri) else '' }}">
+                <a href="{{ site_url('admin/printing-template/pet-enclosure') }}" class="sidebar__link">
+                    <span class="sidebar__icon"><i class="fa-solid fa-print"></i></span>
+                    <span class="sidebar__text">Mẫu in lưu chuồng</span>
+                </a>
+            </div>
+        </div>
 
+        {% set is_admin = (currentUser and currentUser.role == 'admin') %}
         <div class="sidebar__group">
             <div class="sidebar__group-title">Hệ thống</div>
+            {% if is_admin %}
             <div class="sidebar__item sidebar__item--has-submenu {{ 'sidebar__item--active sidebar__item--open' if isMenuActive('admin/users', currentUri) else '' }}">
                 <div class="sidebar__link">
                     <span class="sidebar__icon"><i class="fa-solid fa-circle-user"></i></span>
@@ -186,12 +201,15 @@
                 </div>
                 <div class="sidebar__submenu-popup"></div>
             </div>
+            {% endif %}
+            {% if is_admin %}
             <div class="sidebar__item {{ 'sidebar__item--active' if isMenuActive('admin/settings', currentUri) else '' }}">
                 <a href="{{ site_url('admin/settings') }}" class="sidebar__link">
                     <span class="sidebar__icon"><i class="fa-solid fa-gear"></i></span>
                     <span class="sidebar__text">Cài đặt</span>
                 </a>
             </div>
+            {% endif %}
         </div>
     </nav>
 </aside>

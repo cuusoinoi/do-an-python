@@ -43,6 +43,17 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label for="medical_record_id">Phiếu khám liên quan</label>
+                        <select id="medical_record_id" name="medical_record_id">
+                            <option value="">-- Không liên kết --</option>
+                            {% for record in medicalRecords %}
+                                <option value="{{ record.medical_record_id }}" {{ ('selected' if record.medical_record_id == course.medical_record_id else '') }}>
+                                    #{{ record.medical_record_id }} - {{ record.medical_record_type }} - {{ date('d/m/Y', strtotime(record.medical_record_visit_date)) }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="start_date">Ngày bắt đầu <span class="required-field">*</span></label>
                         <input type="date" id="start_date" name="start_date" value="{{ course.start_date }}" required>
                     </div>
