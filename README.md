@@ -113,20 +113,37 @@ python -m pip install -r requirements.txt
 - Copy `.env.example` thành `.env` (nếu cần).
 - Kiểm tra các biến DB khớp máy local.
 
-### Bước 3: Chạy ứng dụng
+### Bước 3: Khởi tạo dữ liệu từ `petcare_mysql_database.sql`
+
+#### Cách 1: MySQL CLI
+
+```bash
+mysql -u mysql -p123456 -e "CREATE DATABASE IF NOT EXISTS petcare CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u mysql -p123456 petcare < "petcare_mysql_database.sql"
+```
+
+#### Cách 2: phpMyAdmin
+
+1. Mở `http://localhost/phpmyadmin`
+2. Tạo database `petcare` (utf8mb4_unicode_ci)
+3. Chọn tab **Import**
+4. Chọn file `petcare_mysql_database.sql`
+5. Bấm **Go**
+
+#### Kiểm tra nhanh sau import
+
+```bash
+mysql -u mysql -p123456 -D petcare -e "SHOW TABLES;"
+mysql -u mysql -p123456 -D petcare -e "SELECT COUNT(*) AS users FROM users;"
+```
+
+### Bước 4: Chạy ứng dụng
 
 ```bash
 python run_dev.py
 ```
 
 `run_dev.py` sẽ chạy khởi tạo dữ liệu và start server dev.
-
-### Bước 4: Kiểm tra nhanh (tùy chọn)
-
-```bash
-python -m scripts.smoke_check
-python -m scripts.route_smoke
-```
 
 ### URL chính
 

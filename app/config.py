@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     db_password: str = "123456"
     db_name: str = "petcare"
 
-    sql_dump_path: str = "../petcare_php/petcare_database.sql"
+    sql_dump_path: str = "petcare_mysql_database.sql"
 
     model_config = SettingsConfigDict(
         env_file=".env",
