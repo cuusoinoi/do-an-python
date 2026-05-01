@@ -95,10 +95,11 @@ do_an_python/
 ### Yêu cầu hệ thống
 
 - Python `3.11+`
-- MySQL chạy tại `localhost:3306`
-- Tài khoản MySQL:
+- **MySQL cài trên máy và chạy local** (ví dụ `localhost:3306`)
+- Tài khoản MySQL khớp `.env` (mặc định trong `.env.example`):
   - User: `mysql`
   - Password: `123456`
+  - Database: `petcare`
 
 ### Bước 1: Tạo môi trường và cài package
 
@@ -113,28 +114,17 @@ python -m pip install -r requirements.txt
 - Copy `.env.example` thành `.env` (nếu cần).
 - Kiểm tra các biến DB khớp máy local.
 
-### Bước 3: Khởi tạo dữ liệu từ `petcare_mysql_database.sql`
+### Bước 3: Tạo dữ liệu cho project
 
-#### Cách 1: MySQL CLI
+1. Cài và bật **MySQL** trên máy (chạy local).
+2. Tạo database `petcare` (khuyến nghị `utf8mb4_unicode_ci`).
+3. **Chạy / import** file `petcare_mysql_database.sql` trong thư mục project vào database đó — file này tạo bảng và dữ liệu mẫu để ứng dụng hoạt động.
+
+Ví dụ bằng MySQL CLI (đổi user/password nếu máy bạn khác):
 
 ```bash
 mysql -u mysql -p123456 -e "CREATE DATABASE IF NOT EXISTS petcare CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 mysql -u mysql -p123456 petcare < "petcare_mysql_database.sql"
-```
-
-#### Cách 2: phpMyAdmin
-
-1. Mở `http://localhost/phpmyadmin`
-2. Tạo database `petcare` (utf8mb4_unicode_ci)
-3. Chọn tab **Import**
-4. Chọn file `petcare_mysql_database.sql`
-5. Bấm **Go**
-
-#### Kiểm tra nhanh sau import
-
-```bash
-mysql -u mysql -p123456 -D petcare -e "SHOW TABLES;"
-mysql -u mysql -p123456 -D petcare -e "SELECT COUNT(*) AS users FROM users;"
 ```
 
 ### Bước 4: Chạy ứng dụng
@@ -143,7 +133,7 @@ mysql -u mysql -p123456 -D petcare -e "SELECT COUNT(*) AS users FROM users;"
 python run_dev.py
 ```
 
-`run_dev.py` sẽ chạy khởi tạo dữ liệu và start server dev.
+`run_dev.py` khởi động server dev. Nếu database **chưa** có dữ liệu, script init có thể tự import theo đường dẫn `SQL_DUMP_PATH` trong `.env` (mặc định trỏ tới `petcare_mysql_database.sql`).
 
 ### URL chính
 
