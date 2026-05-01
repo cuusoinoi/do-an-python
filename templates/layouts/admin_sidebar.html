@@ -185,9 +185,9 @@
         </div>
 
         {% set is_admin = (currentUser and currentUser.role == 'admin') %}
+        {% if is_admin %}
         <div class="sidebar__group">
             <div class="sidebar__group-title">Hệ thống</div>
-            {% if is_admin %}
             <div class="sidebar__item sidebar__item--has-submenu {{ 'sidebar__item--active sidebar__item--open' if isMenuActive('admin/users', currentUri) else '' }}">
                 <div class="sidebar__link">
                     <span class="sidebar__icon"><i class="fa-solid fa-circle-user"></i></span>
@@ -201,15 +201,13 @@
                 </div>
                 <div class="sidebar__submenu-popup"></div>
             </div>
-            {% endif %}
-            {% if is_admin %}
             <div class="sidebar__item {{ 'sidebar__item--active' if isMenuActive('admin/settings', currentUri) else '' }}">
                 <a href="{{ site_url('admin/settings') }}" class="sidebar__link">
                     <span class="sidebar__icon"><i class="fa-solid fa-gear"></i></span>
                     <span class="sidebar__text">Cài đặt</span>
                 </a>
             </div>
-            {% endif %}
         </div>
+        {% endif %}
     </nav>
 </aside>

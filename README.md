@@ -200,6 +200,11 @@ python run_dev.py
 - Username: `admin`
 - Password: `123456`
 
+### Nhân viên phòng khám mặc định
+
+- Username: `staff`
+- Password: `123456`
+
 ### Customer mẫu
 
 - Phone: `0901234567`
