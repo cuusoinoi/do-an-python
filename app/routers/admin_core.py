@@ -15,7 +15,7 @@ from app.record_detail_queries import (
     save_record_services,
 )
 from app.security import hash_password, verify_password
-from app.session import pop_flash, set_flash
+from app.session import pop_flash, redirect_if_customer_session, set_flash
 from app.user_time_compat import insert_user_with_time_compat
 
 router = APIRouter(prefix="/admin", tags=["admin-core"])
@@ -23,6 +23,9 @@ templates = Jinja2Templates(directory="templates")
 
 
 def _guard_staff(request: Request):
+    r = redirect_if_customer_session(request)
+    if r:
+        return r
     if request.session.get("role") not in {"admin", "staff"}:
         set_flash(request, error="Vui long dang nhap")
         return RedirectResponse(url="/admin", status_code=302)
@@ -30,6 +33,9 @@ def _guard_staff(request: Request):
 
 
 def _guard_admin(request: Request):
+    r = redirect_if_customer_session(request)
+    if r:
+        return r
     if request.session.get("role") != "admin":
         set_flash(request, error="Ban khong co quyen truy cap")
         return RedirectResponse(url="/admin/dashboard", status_code=302)

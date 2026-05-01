@@ -1,4 +1,14 @@
 from fastapi import Request
+from starlette.responses import RedirectResponse
+
+CUSTOMER_HOME_PATH = "/customer/dashboard"
+
+
+def redirect_if_customer_session(request: Request) -> RedirectResponse | None:
+    """Khách đã đăng nhập khu vực customer — không cho vào /admin."""
+    if request.session.get("role") == "customer":
+        return RedirectResponse(url=CUSTOMER_HOME_PATH, status_code=302)
+    return None
 
 
 _FLASH_TEXT_MAP = {
@@ -77,6 +87,7 @@ _FLASH_TEXT_MAP = {
     "Xoa thuoc khoi don thanh cong": "Xóa thuốc khỏi đơn thành công",
     "Thu cung khong hop le": "Thú cưng không hợp lệ",
     "Dat lich thanh cong": "Đặt lịch thành công",
+    "Tai khoan khach hang - chuyen den khu vuc khach": "Tài khoản khách hàng — đang chuyển đến khu vực khách hàng",
 }
 
 

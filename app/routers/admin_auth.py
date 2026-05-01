@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 
 from app.db import fetch_all, fetch_one
 from app.security import verify_password
-from app.session import pop_flash, set_flash
+from app.session import CUSTOMER_HOME_PATH, pop_flash, redirect_if_customer_session, set_flash
 
 router = APIRouter(prefix="/admin", tags=["admin-auth"])
 templates = Jinja2Templates(directory="templates")
@@ -13,7 +13,10 @@ templates = Jinja2Templates(directory="templates")
 
 @router.get("/", response_class=HTMLResponse)
 def admin_login_page(request: Request):
-    if request.session.get("username"):
+    r = redirect_if_customer_session(request)
+    if r:
+        return r
+    if request.session.get("username") and request.session.get("role") in {"admin", "staff"}:
         return RedirectResponse(url="/admin/dashboard", status_code=302)
     return templates.TemplateResponse(
         "admin/login.html",
@@ -34,10 +37,26 @@ def admin_login(request: Request, username: str = Form(""), password: str = Form
     if not user or not verify_password(password, user.get("password")):
         set_flash(request, error="Sai ten dang nhap hoac mat khau")
         return RedirectResponse(url="/admin", status_code=302)
+    if user.get("role") == "customer":
+        customer = fetch_one(
+            "SELECT customer_id FROM customers WHERE customer_phone_number = :phone LIMIT 1",
+            {"phone": user["username"]},
+        )
+        request.session["user_id"] = user["id"]
+        request.session["username"] = user["username"]
+        request.session["fullname"] = user["fullname"]
+        request.session["role"] = "customer"
+        if customer:
+            request.session["customer_id"] = customer["customer_id"]
+        else:
+            request.session.pop("customer_id", None)
+        set_flash(request, success="Tai khoan khach hang - chuyen den khu vuc khach")
+        return RedirectResponse(url=CUSTOMER_HOME_PATH, status_code=302)
     request.session["user_id"] = user["id"]
     request.session["username"] = user["username"]
     request.session["fullname"] = user["fullname"]
     request.session["role"] = user["role"]
+    request.session.pop("customer_id", None)
     set_flash(request, success="Dang nhap thanh cong")
     return RedirectResponse(url="/admin/dashboard", status_code=302)
 
@@ -50,6 +69,9 @@ def admin_logout(request: Request):
 
 @router.get("/dashboard", response_class=HTMLResponse)
 def admin_dashboard(request: Request):
+    r = redirect_if_customer_session(request)
+    if r:
+        return r
     if request.session.get("role") not in {"admin", "staff"}:
         set_flash(request, error="Vui long dang nhap")
         return RedirectResponse(url="/admin", status_code=302)
