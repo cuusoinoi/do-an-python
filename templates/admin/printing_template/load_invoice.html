@@ -1,3 +1,9 @@
+{% if error_message is defined and error_message %}
+<div class="invoice-sheet" style="padding: 20px;">
+    <p style="margin-bottom: 16px;">{{ error_message }}</p>
+    <p><a href="/admin/printing-template/pet-enclosure">← Mẫu in lưu chuồng</a> · <a href="/admin/dashboard">Dashboard</a></p>
+</div>
+{% else %}
 <div class="invoice-sheet">
     <div style="text-align: center; margin-bottom: 20px;">
         <h2 style="font-size: 20px; text-transform: uppercase; margin-bottom: 5px;">HÓA ĐƠN LƯU CHUỒNG</h2>
@@ -58,3 +64,4 @@
         Cảm ơn Quý khách!
     </div>
 </div>
+{% endif %}

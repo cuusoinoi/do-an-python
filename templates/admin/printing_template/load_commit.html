@@ -1,3 +1,9 @@
+{% if error_message is defined and error_message %}
+<div class="commitment-sheet" style="padding: 20px;">
+    <p style="margin-bottom: 16px;">{{ error_message }}</p>
+    <p><a href="/admin/printing-template/pet-enclosure">← Mẫu in lưu chuồng</a> · <a href="/admin/dashboard">Dashboard</a></p>
+</div>
+{% else %}
 <div class="commitment-sheet">
     <div class="commitment-sheet__header" style="text-align: center; margin-bottom: 20px;">
         <h2 style="font-size: 20px; text-transform: uppercase; margin-bottom: 5px;">GIẤY CAM KẾT LƯU CHUỒNG</h2>
@@ -6,7 +12,7 @@
             Đ/c: {{ settings.clinic_address_1 or '' }} • ĐT: {{ settings.phone_number_1 or '' }}{{ (', ' ~ esc(settings.phone_number_2) if settings.phone_number_2 else '') }}
         </div>
         <div style="margin-top: 10px;">
-            Ngày {{ date("d/m/Y", strtotime(invoice.invoice_date)) }}
+            Ngày {{ date("d/m/Y", strtotime(enclosure.check_in_date)) }}
         </div>
     </div>
 
@@ -33,7 +39,7 @@
 
         <li style="margin-bottom: 15px;">
             <div style="font-weight: bold; text-decoration: underline;">THỜI GIAN LƯU CHUỒNG & DỊCH VỤ</div>
-            <div>- Thời gian: từ {{ date("d/m/Y H:i", strtotime(enclosure.check_in_date)) }} đến {{ enclosure.check_out_date or "-" }}</div>
+            <div>- Thời gian: từ {{ date("d/m/Y H:i", strtotime(enclosure.check_in_date)) }} đến {{ (date("d/m/Y H:i", strtotime(enclosure.check_out_date)) if enclosure.check_out_date else "-") }}</div>
             <div>- Ghi chú (dịch vụ, đồ gửi kèm...): {{ enclosure.pet_enclosure_note or 'Không có' }}</div>
         </li>
 
@@ -70,3 +76,4 @@
         {{ settings.signing_place or '' }}, ngày {{ date("d") }} tháng {{ date("m") }} năm {{ date("Y") }}
     </div>
 </div>
+{% endif %}

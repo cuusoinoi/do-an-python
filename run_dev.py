@@ -3,7 +3,9 @@ import sys
 
 
 def main() -> None:
-    subprocess.run([sys.executable, "-m", "scripts.init_db"], check=True)
+    init = subprocess.run([sys.executable, "-m", "scripts.init_db"])
+    if init.returncode != 0:
+        sys.exit(init.returncode)
     subprocess.run([sys.executable, "-m", "uvicorn", "app.main:app", "--reload"], check=True)
 
 

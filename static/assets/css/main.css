@@ -1492,6 +1492,33 @@ body.dark-mode .badge {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+/* Mẫu in (AJAX vào #printArea): luôn kiểu "giấy trắng — chữ đen" khi xem trên dark mode */
+body.dark-mode #printArea.preview-box {
+    background: #fff !important;
+    border-color: #ccc !important;
+    color: #1a1a1a !important;
+}
+
+body.dark-mode #printArea.preview-box,
+body.dark-mode #printArea.preview-box h1,
+body.dark-mode #printArea.preview-box h2,
+body.dark-mode #printArea.preview-box h3,
+body.dark-mode #printArea.preview-box div,
+body.dark-mode #printArea.preview-box li,
+body.dark-mode #printArea.preview-box ol,
+body.dark-mode #printArea.preview-box td,
+body.dark-mode #printArea.preview-box th,
+body.dark-mode #printArea.preview-box span,
+body.dark-mode #printArea.preview-box strong,
+body.dark-mode #printArea.preview-box p {
+    color: #1a1a1a !important;
+}
+
+body.dark-mode #printArea.preview-box [style*="dc3545"],
+body.dark-mode #printArea.preview-box [style*="DC3545"] {
+    color: #dc3545 !important;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1023px) {
     .sidebar {

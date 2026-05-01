@@ -2341,13 +2341,7 @@ def printing_template_pet_enclosure_load_commit(request: Request, enclosure_id: 
     if not enclosure:
         return templates.TemplateResponse(
             "admin/printing_template/load_commit.html",
-            {"request": request, "title": "Giay cam ket", "error_message": "Khong tim thay luu chuong"},
-        )
-    invoice = fetch_one("SELECT * FROM invoices WHERE pet_enclosure_id=:id ORDER BY invoice_id DESC LIMIT 1", {"id": enclosure_id})
-    if not invoice:
-        return templates.TemplateResponse(
-            "admin/printing_template/load_commit.html",
-            {"request": request, "title": "Giay cam ket", "error_message": "Luu chuong nay chua co hoa don"},
+            {"request": request, "title": "Giay cam ket", "error_message": "Không tìm thấy lượt lưu chuồng."},
         )
     customer = fetch_one("SELECT * FROM customers WHERE customer_id=:id", {"id": enclosure["customer_id"]})
     pet = fetch_one("SELECT * FROM pets WHERE pet_id=:id", {"id": enclosure["pet_id"]})
@@ -2363,7 +2357,6 @@ def printing_template_pet_enclosure_load_commit(request: Request, enclosure_id: 
         {
             "request": request,
             "title": "Giay cam ket",
-            "invoice": invoice,
             "enclosure": enclosure,
             "customer": customer,
             "pet": pet,
@@ -2382,7 +2375,7 @@ def printing_template_pet_enclosure_load_invoice(request: Request, enclosure_id:
     if not invoice:
         return templates.TemplateResponse(
             "admin/printing_template/load_invoice.html",
-            {"request": request, "title": "Mau in hoa don", "error_message": "Luu chuong nay chua co hoa don"},
+            {"request": request, "title": "Mau in hoa don", "error_message": "Lượt lưu chuồng này chưa có hóa đơn."},
         )
     customer = fetch_one("SELECT * FROM customers WHERE customer_id=:id", {"id": invoice["customer_id"]})
     pet = fetch_one("SELECT * FROM pets WHERE pet_id=:id", {"id": invoice["pet_id"]})

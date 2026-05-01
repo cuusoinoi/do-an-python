@@ -213,9 +213,8 @@ class Jinja2Templates(_Jinja2Templates):
                                 "<link rel='stylesheet' href='/static/assets/css/base.css'>"
                                 "<link rel='stylesheet' href='/static/assets/css/main.css'>"
                                 "</head><body style='padding:24px'>"
-                                "<h2>Trang quản trị đang được chuẩn hóa giao diện</h2>"
+                                "<h2>Tính năng đang được phát triển</h2>"
                                 f"<p>Module: <b>{request.url.path}</b></p>"
-                                "<p>Tạm thời có thể thao tác các module khác từ menu.</p>"
                                 "<p><a href='/admin/dashboard'>Về Dashboard</a></p>"
                                 "</body></html>"
                             ),

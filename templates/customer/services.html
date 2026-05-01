@@ -18,7 +18,7 @@
                         <p>{{ service.description or 'Dịch vụ chuyên nghiệp' }}</p>
                         {% if service.price and service.price > 0 %}
                             <div class="service-price">
-                                <strong>{{ service.price }} VNĐ</strong>
+                                <strong>{{ number_format(service.price or 0, 0, ',', '.') }} đ</strong>
                             </div>
                         {% else %}
                             <div class="service-price">
