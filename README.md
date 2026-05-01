@@ -10,19 +10,19 @@ Hệ thống chăm sóc thú cưng toàn diện được xây dựng bằng **Fa
 
 ---
 
-## 📋 Mục lục
+## Mục lục
 
-- [Tổng quan](#-tổng-quan)
-- [Công nghệ sử dụng](#-công-nghệ-sử-dụng)
-- [Cấu trúc dự án](#-cấu-trúc-dự-án)
-- [Cài đặt và chạy](#-cài-đặt-và-chạy)
-- [Tính năng chính](#-tính-năng-chính)
-- [Hướng dẫn sử dụng nhanh](#-hướng-dẫn-sử-dụng-nhanh)
-- [Thông tin đăng nhập](#-thông-tin-đăng-nhập)
+- [Tổng quan](#tổng-quan)
+- [Công nghệ sử dụng](#công-nghệ-sử-dụng)
+- [Cấu trúc dự án](#cấu-trúc-dự-án)
+- [Cài đặt và chạy](#cài-đặt-và-chạy)
+- [Tính năng chính](#tính-năng-chính)
+- [Hướng dẫn sử dụng nhanh](#hướng-dẫn-sử-dụng-nhanh)
+- [Thông tin đăng nhập](#thông-tin-đăng-nhập)
 
 ---
 
-## 🎯 Tổng quan
+## Tổng quan
 
 **UIT Petcare Python** là hệ thống quản lý phòng khám thú cưng chạy trên web:
 
@@ -34,7 +34,7 @@ Hệ thống chăm sóc thú cưng toàn diện được xây dựng bằng **Fa
 
 ---
 
-## 💻 Công nghệ sử dụng
+## Công nghệ sử dụng
 
 ### Backend
 
@@ -58,7 +58,7 @@ Hệ thống chăm sóc thú cưng toàn diện được xây dựng bằng **Fa
 
 ---
 
-## 📁 Cấu trúc dự án
+## Cấu trúc dự án
 
 ```text
 do_an_python/
@@ -90,7 +90,7 @@ do_an_python/
 
 ---
 
-## 🚀 Cài đặt và chạy
+## Cài đặt và chạy
 
 ### Yêu cầu hệ thống
 
@@ -144,7 +144,7 @@ python run_dev.py
 
 ---
 
-## ✨ Tính năng chính
+## Tính năng chính
 
 ### Admin/Staff
 
@@ -174,7 +174,7 @@ python run_dev.py
 
 ---
 
-## 📖 Hướng dẫn sử dụng nhanh
+## Hướng dẫn sử dụng nhanh
 
 ### Luồng Admin cơ bản
 
@@ -193,7 +193,7 @@ python run_dev.py
 
 ---
 
-## 🔑 Thông tin đăng nhập
+## Thông tin đăng nhập
 
 ### Admin mặc định
 
